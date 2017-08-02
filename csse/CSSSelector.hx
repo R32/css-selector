@@ -61,22 +61,14 @@ class Attrib {
 	}
 }
 
-class CSSSParserException {
-	public var message: String;
-	public var detal: String;
-	public var pos: Int;
-	public function new(msg, d, p) {
-		message = msg;
-		detal = d;
-		pos = p;
-	}
-	public function toString(): String {
-		return detal == ""
-			? 'CSSParseError: $message, pos: $pos.'
-			: 'CSSParseError: $message: "$detal", pos: $pos.';
-	}
+@:dce @:enum abstract ParseError(Int) to Int {
+	var None = 0;
+	var InvalidChar     = -1;
+	var InvalidSelector = -2;
+	var Expected        = -3;
+	var InvalidArgument = -4;
+	var UnexpectedWhitespace = -5;
 }
-
 
 class CSSSelector {
 	public var name: String;
@@ -128,15 +120,18 @@ class CSSSelector {
 		} else {
 			return '$name$sattr$sid$sclasses$spse';
 		}
-
 	}
 
 	public static function parse(s: String) {
 		var list = [new CSSSelector(None)];
-		try {
-			doParse(s, 0, s.length, list[0], list);
-		} catch (e: CSSSParserException) {
-			trace(e.toString());
+		doParse(s, 0, s.length, list[0], list);
+		if (Error.no < 0) {
+		#if sys
+			Sys.println(Error.str("CSSSelectorParse"));
+		#else
+			trace(Error.str("CSSSelectorParse"));
+		#end
+			Error.clear();
 			return null;
 		}
 		return list;
@@ -176,7 +171,7 @@ class CSSSelector {
 					} else if (c == "*".code) {
 						state = RACE;
 					} else {
-						error("Invalid Char", str.charAt(pos), pos);
+						Error.exit(InvalidChar, str.charAt(pos), pos);
 					}
 				}
 			case RACE:
@@ -215,23 +210,25 @@ class CSSSelector {
 			case ID:
 				left = pos;
 				pos = ident(str, pos, max, is_alpha_um, is_anum);
-				if (left == pos) error("Invalid Char", str.charAt(pos), pos);
+				if (left == pos) Error.exit(InvalidChar, str.charAt(pos), pos);
 				cur.id = str.substr(left, pos - left);
 				state = RACE;
 				continue;
 			case CLASS:
 				left = pos;
 				pos = ident(str, pos, max, is_alpha_um, is_anum);
-				if (left == pos) error("Invalid Char", str.charAt(pos), pos);
+				if (left == pos) Error.exit(InvalidChar, str.charAt(pos), pos);
 				cur.classes.push(str.substr(left, pos - left));
 				state = RACE;
 				continue;
 			case PSEUDO:
 				pos = on_pseudo(str, pos, max, cur);
+				if (pos == -1) return;
 				state = RACE;
 				continue;
 			case ATTRIB:
 				pos = on_attr(str, pos, max, cur);
+				if (pos == -1) return;
 				state = RACE;
 				continue;
 			default:
@@ -254,9 +251,9 @@ class CSSSelector {
 		if (char(pos + 1) == ":".code) ++pos; // skip ::
 
 		pos = until_pos(is_alpha_um);
-		if (left == pos) error("Invalid Char", charAt(pos), pos);
+		if (left == pos) Error.exit(InvalidChar, charAt(pos), pos, -1);
 		var name = substr();
-		if (!mp.exists(name)) error("Invalid psuedo selector",name, left);
+		if (!mp.exists(name)) Error.exit(InvalidSelector, name, left, -1);
 		var c = char(pos);
 		if (c == "(".code) {
 			pos = ignore_space(str, pos + 1, max);
@@ -264,23 +261,24 @@ class CSSSelector {
 			case "lang":
 				left = pos;
 				pos = ident_pos(is_alpha_um, is_anum);
-				if (pos == left) error("Invalid Char", charAt(pos), pos);
+				if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
 				cur.pseudo.push(Lang(substr()));
 			case "not": // TODO
 				var no = new CSSSelector(None);
 				pos = not(str, pos, max, no);
-				// TODO: error check..
+				if (pos == -1) return -1;
 				cur.pseudo.push(Not(no));
 			case "nth-child",
 				 "nth-last-child",
 				 "nth-of-type",
 				 "nth-last-of-type":
 				pos = nth(str, pos, max, cur, name);
+				if (pos == -1) return -1;
 			default:
-				error("Invalid psuedo selector",name, left);
+				Error.exit(InvalidSelector, name, left, -1);
 			}
 			IGNORE_SPACES();
-			if (char(pos++) != ")".code) error("Expected", ")", pos - 1);
+			if (char(pos++) != ")".code) Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
 		} else {
 			cur.pseudo.push(Classes(name));
 		}
@@ -298,7 +296,7 @@ class CSSSelector {
 		IGNORE_SPACES();
 		var left = pos;
 		pos = ident_pos(is_attr_first, is_anumx);
-		if (pos == left) error("Invalid Char", charAt(pos), pos);
+		if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
 		var key = str.substr(left, pos - left);
 		IGNORE_SPACES();
 		var c = char(pos++);
@@ -312,7 +310,7 @@ class CSSSelector {
 			 "*".code,
 			 "|".code:
 			if (c != "=".code) {
-				if (char(pos++) != "=".code) error("Expected", "=", pos - 1);
+				if (char(pos++) != "=".code) Error.exit(Expected, "=", pos - 1, -1);
 			}
 			var type = AttrType.ofInt(c);
 			IGNORE_SPACES();
@@ -328,7 +326,7 @@ class CSSSelector {
 					left = pos - 1;
 					pos = until_pos(is_anum);
 				} else {
-					error("Invalid Char",charAt(pos - 1), pos - 1);
+					Error.exit(InvalidChar,charAt(pos - 1), pos - 1, -1);
 				}
 			}
 			cur.attr.push(new Attrib(key, str.substr(left, pos - left), type)); // if pos == left then empty string("")
@@ -336,9 +334,9 @@ class CSSSelector {
 			if (c == '"'.code || c == "'".code) ++pos;
 			IGNORE_SPACES();
 			c = char(pos++);
-			if (c != "]".code) error("Expected", "]", pos - 1);
+			if (c != "]".code) Error.exit(Expected, "]", pos - 1, -1);
 		default:
-			error("Invalid Char", charAt(pos - 1), pos - 1);
+			Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
 		}
 		return pos;
 	}
@@ -378,31 +376,31 @@ class CSSSelector {
 							} else if(c == "+".code || c == "-".code) {
 								n = 0;
 							} else {
-								error("Invalid Char", charAt(pos - 1), pos - 1);
+								Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
 							}
 						} else {
 							n = Std.parseInt(substr());
-							if (n == null) error("Invalid argument", substr(), left);
+							if (n == null) Error.exit(InvalidArgument, substr(), left, -1);
 						}
 						x = 1;
 					case ")".code:
 						n = 0;
 						if (pos == left) {
-							error("Invalid Char", charAt(pos), pos);
+							Error.exit(InvalidChar, charAt(pos), pos, -1);
 						} else if (pos - left == 1) {
 							c = char(pos - 1);
 							if (is_number(c)) {
 								m = c - "0".code;
 							} else {
-								error("Invalid Char", charAt(pos - 1), pos - 1);
+								Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
 							}
 						} else {
 							m = Std.parseInt(substr());
-							if (m == null) error("Invalid argument", substr(), left);
+							if (m == null) Error.exit(InvalidArgument, substr(), left, -1);
 						}
 						break;
 					default:
-						if (is_space(c)) error("Unexpected Whitespace", charAt(pos), pos);
+						if (is_space(c)) Error.exit(UnexpectedWhitespace, charAt(pos), pos, -1);
 					}
 				case 1: // str[pos - 1] = 'n';
 					IGNORE_SPACES();
@@ -416,13 +414,13 @@ class CSSSelector {
 						m = 0;
 						break;
 					default:
-						error("Invalid Char", charAt(pos), pos);
+						Error.exit(InvalidChar, charAt(pos), pos, -1);
 					}
 				case 2: // str[pos - 1] = '+' | '-';
 					IGNORE_SPACES();
 					left = pos;
 					pos = until_pos(is_number);
-					if (pos == left) error("Invalid Char", charAt(pos), pos);
+					if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
 					if (pos - 1 == left) {
 						c = char(pos - 1);
 						m = c - "0".code;
@@ -454,68 +452,72 @@ class CSSSelector {
 		case ".".code:
 			left = pos;
 			pos = ident_pos(is_alpha_um, is_anum);
-			if (pos == left) error("Invalid Char", charAt(pos), pos);
+			if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
 			cur.classes.push(substr());
 		case "#".code:
 			left = pos;
 			pos = ident_pos(is_alpha_um, is_anum);
-			if (pos == left) error("Invalid Char", charAt(pos), pos);
+			if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
 			cur.id = substr();
 		case "[".code:
 			pos = on_attr(str, pos, max, cur);
-			// TODO if pos == -1
+			if (pos == -1) return -1;
 		case ":".code:
 			pos = on_pseudo(str, pos, max, cur);
-			// TODO if pos == -1
+			if (pos == -1) return -1;
 		default:
 			if (is_alpha_u(c)) {
 				left = pos - 1;
 				pos = until_pos(is_anum);
 				cur.name = substr();
 			} else {
-				error("Invalid Char",charAt(pos - 1), pos - 1);
+				Error.exit(InvalidChar,charAt(pos - 1), pos - 1, -1);
 			}
 		}
 		return pos;
 	}
 
-	static inline function error(msg, d, p) throw new CSSSParserException(msg, d, p);
-
 	public static inline function is_attr_first(c: Int) {
 		return is_alpha_u(c) || c == ":".code;
 	}
 
-	public static var mp: haxe.ds.StringMap<Bool> = [
+	public static var mp: haxe.DynamicAccess<Int> = {
 		// psuedo classes
-		"root"          => true,
-		"first-child"   => true,
-		"last-child"    => true,
-		"only-child"    => true,
-		"first-of-type" => true,
-		"last-of-type"  => true,
-		"only-of-type"  => true,
-		"empty"         => true,
-		"checked"       => true,
-		"enabled"       => true,
-		"disabled"      => true,
-		"link"          => false,  // no effect
-		"visited"       => false,
-		"hover"         => false,
-		"active"        => false,
-		"focus"         => false,
-		"target"        => false,
-		"first-letter"  => false,
-		"first-line"    => false,
-		"before"        => false,
-		"after"         => false,
-		"selection"     => false,
+		"root"          : 1,
+		"first-child"   : 1,
+		"last-child"    : 1,
+		"only-child"    : 1,
+		"first-of-type" : 1,
+		"last-of-type"  : 1,
+		"only-of-type"  : 1,
+		"empty"         : 1,
+		"checked"       : 1,
+		"enabled"       : 1,
+		"disabled"      : 1,
+		"link"          : 0,    // NOEffect
+		"visited"       : 0,
+		"hover"         : 0,
+		"active"        : 0,
+		"focus"         : 0,
+		"target"        : 0,
+		"first-letter"  : 0,
+		"first-line"    : 0,
+		"before"        : 0,
+		"after"         : 0,
+		"selection"     : 0,
 
 		// psuedo elements
-		"lang"             => true,
-		"not"              => true,
-		"nth-child"        => true,
-		"nth-last-child"   => true,
-		"nth-of-type"      => true,
-		"nth-last-of-type" => true,
-	];
+		"lang"             : 3, // Effect | Elements
+		"not"              : 3,
+		"nth-child"        : 3,
+		"nth-last-child"   : 3,
+		"nth-of-type"      : 3,
+		"nth-last-of-type" : 3,
+	}
+}
+
+@:dce @:enum abstract PElemType(Int) to Int {
+	var NOEffect  = 0;
+	var Effect    = 1;
+	var Elements  = 1 << 1;
 }
