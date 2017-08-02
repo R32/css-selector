@@ -1,0 +1,6 @@
+-dce full
+-main test.Test
+-D nodejs
+-D analyzer-optimize
+-D old-error-format
+-js bin/test.js
