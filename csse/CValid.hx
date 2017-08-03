@@ -4,6 +4,8 @@ using StringTools;
 
 class CValid {
 
+	public static inline var ERR_POS = -1;
+
 	public static function ignore_space(str: String, i: Int, max: Int): Int {
 		while (i < max) {
 			if (!is_space(str.fastCodeAt(i))) break;

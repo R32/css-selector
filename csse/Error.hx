@@ -22,26 +22,22 @@ class Error {
 		no = 0;
 	}
 
+	macro public static function exit(message, extra, pos) return macro @:mergeBlock {
+		csse.Error.set($message, $extra, $pos);
+		return;
+	}
+	macro public static function exitWith(message, extra, pos, retval) return macro @:mergeBlock {
+		csse.Error.set($message, $extra, $pos);
+		return $retval;
+	}
+
 	static var S = [
-		null,
+		"",
 		"Invalid Char",      // -1
 		"Invalid Selector",  // -2
 		"Expected",          // ...
 		"Invalid Argument",
 		"Unexpected Whitespace"
 	];
-
-	macro public static function exit(message, extra, pos, ?ret) {
-		var exit = macro return; // for :Void
-		switch (ret.expr) {
-		case EConst(CIdent("null")):
-		default:
-			exit = macro return $ret;
-		}
-		return macro @:mergeBlock {
-			csse.Error.set($message, $extra, $pos);
-			$exit;
-		};
-	}
 }
 

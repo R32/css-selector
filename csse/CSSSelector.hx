@@ -101,7 +101,13 @@ class CSSSelector {
 			case Not(sc):
 				sa.push('not(${sc.toString()})');
 			case Nth(s, n, m):
-				var sn = n == 0 ? "n" : n + "n";
+				var sn = switch (n) {
+				case  0: "0n";
+				case  1: "n";
+				case -1: "-n";
+				default:
+					n + "n";
+				}
 				var sm = m == 0 ? "" : (m > 0 ? "+" + m : "" + m);
 				sa.push('$s($sn$sm)');
 			}
@@ -124,6 +130,7 @@ class CSSSelector {
 
 	public static function parse(s: String) {
 		var list = [new CSSSelector(None)];
+		Error.clear();
 		doParse(s, 0, s.length, list[0], list);
 		if (Error.no < 0) {
 		#if sys
@@ -131,19 +138,17 @@ class CSSSelector {
 		#else
 			trace(Error.str("CSSSelectorParse"));
 		#end
-			Error.clear();
 			return null;
 		}
 		return list;
 	}
 
 	static function doParse(str: String, pos: Int, max: Int, cur: CSSSelector, list: Array<CSSSelector>): Void {
-		var aname = null;
 		var state = NEW;
 		var next = NEW;
-
 		var left: Int;
 		var c: Int;
+
 		inline function char(p) return str.fastCodeAt(p);
 
 		pos = ignore_space(str, pos, max);
@@ -164,7 +169,7 @@ class CSSSelector {
 				default:
 					if (is_alpha_u(c)) {
 						left = pos;
-						pos = until(str, pos + 1, max, is_anu);
+						pos = until(str, pos + 1, max, is_anum);
 						cur.name = str.substr(left, pos - left);
 						state = RACE;
 						continue;
@@ -200,12 +205,10 @@ class CSSSelector {
 						pos = ignore_space(str, pos + 1, max);
 						rel = Relation.ofInt(c);
 					}
-					var sub = new CSSSelector(rel);
-					cur.sub = sub;
-					doParse(str, pos, max, sub, list);
+					cur.sub = new CSSSelector(rel);
+					doParse(str, pos, max, cur.sub, list);
 					return;
 				default:
-
 				}
 			case ID:
 				left = pos;
@@ -223,12 +226,12 @@ class CSSSelector {
 				continue;
 			case PSEUDO:
 				pos = on_pseudo(str, pos, max, cur);
-				if (pos == -1) return;
+				if (pos == ERR_POS) return;
 				state = RACE;
 				continue;
 			case ATTRIB:
 				pos = on_attr(str, pos, max, cur);
-				if (pos == -1) return;
+				if (pos == ERR_POS) return;
 				state = RACE;
 				continue;
 			default:
@@ -251,9 +254,9 @@ class CSSSelector {
 		if (char(pos + 1) == ":".code) ++pos; // skip ::
 
 		pos = until_pos(is_alpha_um);
-		if (left == pos) Error.exit(InvalidChar, charAt(pos), pos, -1);
+		if (left == pos) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 		var name = substr();
-		if (!mp.exists(name)) Error.exit(InvalidSelector, name, left, -1);
+		if (!mp.exists(name)) Error.exitWith(InvalidSelector, name, left, ERR_POS);
 		var c = char(pos);
 		if (c == "(".code) {
 			pos = ignore_space(str, pos + 1, max);
@@ -261,24 +264,23 @@ class CSSSelector {
 			case "lang":
 				left = pos;
 				pos = ident_pos(is_alpha_um, is_anum);
-				if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
+				if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 				cur.pseudo.push(Lang(substr()));
 			case "not": // TODO
 				var no = new CSSSelector(None);
 				pos = not(str, pos, max, no);
-				if (pos == -1) return -1;
+				if (pos == ERR_POS) return -1;
 				cur.pseudo.push(Not(no));
-			case "nth-child",
-				 "nth-last-child",
-				 "nth-of-type",
-				 "nth-last-of-type":
-				pos = nth(str, pos, max, cur, name);
-				if (pos == -1) return -1;
 			default:
-				Error.exit(InvalidSelector, name, left, -1);
+				if (name.substr(0, 3) == "nth") {
+					pos = nth(str, pos, max, cur, name);
+					if (pos == ERR_POS) return -1;
+				} else {
+					Error.exitWith(InvalidSelector, name, left, ERR_POS);
+				}
 			}
 			IGNORE_SPACES();
-			if (char(pos++) != ")".code) Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
+			if (char(pos++) != ")".code) Error.exitWith(InvalidChar, charAt(pos - 1), pos - 1, ERR_POS);
 		} else {
 			cur.pseudo.push(Classes(name));
 		}
@@ -286,18 +288,20 @@ class CSSSelector {
 	}
 	// str[pos-1] == "["
 	static function on_attr(str: String, pos: Int, max: Int, cur: CSSSelector): Int {
+		var left: Int;
 
 		inline function IGNORE_SPACES() pos = ignore_space(str, pos, max);
 		inline function char(p) return str.fastCodeAt(p);
 		inline function charAt(p) return str.charAt(p);
+		inline function substr() return str.substr(left, pos - left);
 		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
 		inline function until_pos(callb) return until(str, pos, max, callb);
 
 		IGNORE_SPACES();
-		var left = pos;
+		left = pos;
 		pos = ident_pos(is_attr_first, is_anumx);
-		if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
-		var key = str.substr(left, pos - left);
+		if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
+		var key = substr();
 		IGNORE_SPACES();
 		var c = char(pos++);
 		switch (c) {
@@ -310,7 +314,7 @@ class CSSSelector {
 			 "*".code,
 			 "|".code:
 			if (c != "=".code) {
-				if (char(pos++) != "=".code) Error.exit(Expected, "=", pos - 1, -1);
+				if (char(pos++) != "=".code) Error.exitWith(Expected, "=", pos - 1, ERR_POS);
 			}
 			var type = AttrType.ofInt(c);
 			IGNORE_SPACES();
@@ -318,25 +322,25 @@ class CSSSelector {
 			left = pos;  // skip `'`, `"`
 			switch (c) {
 			case '"'.code:
-				pos = until_pos(function(c) { return c != '"'.code; } );
+				pos = until_pos(un_double_quote);
 			case "'".code:
-				pos = until_pos(function(c) { return c != "'".code; } );
+				pos = until_pos(un_single_quote);
 			default:
 				if (is_alpha_um(c)) {
 					left = pos - 1;
 					pos = until_pos(is_anum);
 				} else {
-					Error.exit(InvalidChar,charAt(pos - 1), pos - 1, -1);
+					Error.exitWith(InvalidChar,charAt(pos - 1), pos - 1, ERR_POS);
 				}
 			}
-			cur.attr.push(new Attrib(key, str.substr(left, pos - left), type)); // if pos == left then empty string("")
+			cur.attr.push(new Attrib(key, substr(), type)); // if pos == left then empty string("")
 			c = char(pos);
 			if (c == '"'.code || c == "'".code) ++pos;
 			IGNORE_SPACES();
 			c = char(pos++);
-			if (c != "]".code) Error.exit(Expected, "]", pos - 1, -1);
+			if (c != "]".code) Error.exitWith(Expected, "]", pos - 1, ERR_POS);
 		default:
-			Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
+			Error.exitWith(InvalidChar, charAt(pos - 1), pos - 1, ERR_POS);
 		}
 		return pos;
 	}
@@ -359,7 +363,7 @@ class CSSSelector {
 		} else if (str.substr(pos, pos + 3).toLowerCase() == "odd") {
 			pos += 3;
 		} else {          // .split("n") => [n, m]
-			var plus = true;
+			var minus = false;
 			var x = 0;
 			while (pos < max) {
 				c = char(pos);
@@ -367,40 +371,46 @@ class CSSSelector {
 				case 0:  // BEGIN
 					switch (c) {
 					case "n".code, "N".code:
+						c = char(left);
 						if (pos == left) {
 							n = 0;
 						} else if (pos - 1 == left) {
-							c = char(pos - 1);
 							if (is_number(c)) {
 								n = c - "0".code;
-							} else if(c == "+".code || c == "-".code) {
-								n = 0;
+							} else if (c == "+".code) {
+								n = 1;
+							} else if (c == "-".code) {
+								n = -1;
 							} else {
-								Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
+								Error.exitWith(InvalidChar, charAt(pos - 1), pos - 1, ERR_POS);
 							}
 						} else {
+							minus = c == "-".code;
 							n = Std.parseInt(substr());
-							if (n == null) Error.exit(InvalidArgument, substr(), left, -1);
+							if (n == null)
+								Error.exitWith(InvalidArgument, substr(), left, ERR_POS);
+							else if (n == 0 && minus == true)
+								n = -1;
 						}
 						x = 1;
 					case ")".code:
 						n = 0;
 						if (pos == left) {
-							Error.exit(InvalidChar, charAt(pos), pos, -1);
+							Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 						} else if (pos - left == 1) {
 							c = char(pos - 1);
 							if (is_number(c)) {
 								m = c - "0".code;
 							} else {
-								Error.exit(InvalidChar, charAt(pos - 1), pos - 1, -1);
+								Error.exitWith(InvalidChar, charAt(pos - 1), pos - 1, ERR_POS);
 							}
 						} else {
 							m = Std.parseInt(substr());
-							if (m == null) Error.exit(InvalidArgument, substr(), left, -1);
+							if (m == null) Error.exitWith(InvalidArgument, substr(), left, ERR_POS);
 						}
 						break;
 					default:
-						if (is_space(c)) Error.exit(UnexpectedWhitespace, charAt(pos), pos, -1);
+						if (is_space(c)) Error.exitWith(UnexpectedWhitespace, charAt(pos), pos, ERR_POS);
 					}
 				case 1: // str[pos - 1] = 'n';
 					IGNORE_SPACES();
@@ -408,26 +418,26 @@ class CSSSelector {
 					switch (c) {
 					case "+".code,
 						 "-".code:
-						plus = c == "+".code;
+						minus = c == "-".code;
 						x = 2;
 					case ")".code:
 						m = 0;
 						break;
 					default:
-						Error.exit(InvalidChar, charAt(pos), pos, -1);
+						Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 					}
 				case 2: // str[pos - 1] = '+' | '-';
 					IGNORE_SPACES();
 					left = pos;
 					pos = until_pos(is_number);
-					if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
+					if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 					if (pos - 1 == left) {
 						c = char(pos - 1);
 						m = c - "0".code;
 					} else {
 						m = Std.parseInt(substr());
 					}
-					if (!plus) m = -m;
+					if (minus) m = -m;
 					break;
 				default:
 				} // end switch(state)
@@ -452,12 +462,12 @@ class CSSSelector {
 		case ".".code:
 			left = pos;
 			pos = ident_pos(is_alpha_um, is_anum);
-			if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
+			if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 			cur.classes.push(substr());
 		case "#".code:
 			left = pos;
 			pos = ident_pos(is_alpha_um, is_anum);
-			if (pos == left) Error.exit(InvalidChar, charAt(pos), pos, -1);
+			if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 			cur.id = substr();
 		case "[".code:
 			pos = on_attr(str, pos, max, cur);
@@ -471,7 +481,7 @@ class CSSSelector {
 				pos = until_pos(is_anum);
 				cur.name = substr();
 			} else {
-				Error.exit(InvalidChar,charAt(pos - 1), pos - 1, -1);
+				Error.exitWith(InvalidChar,charAt(pos - 1), pos - 1, ERR_POS);
 			}
 		}
 		return pos;
@@ -480,6 +490,9 @@ class CSSSelector {
 	public static inline function is_attr_first(c: Int) {
 		return is_alpha_u(c) || c == ":".code;
 	}
+
+	public static inline function un_double_quote(c) { return c != '"'.code; }
+	public static inline function un_single_quote(c) { return c != "'".code; }
 
 	public static var mp: haxe.DynamicAccess<Int> = {
 		// psuedo classes
