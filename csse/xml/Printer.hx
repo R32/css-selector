@@ -19,8 +19,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+ // Note: This is a Modified version copy from haxe.xml.Printer.
+ //
+ //
 
-package haxe.xml;
+package csse.xml;
 
 /**
 	This class provides utility methods to convert Xml instances to
@@ -50,11 +53,11 @@ class Printer {
 		switch (value.nodeType) {
 			case CData:
 				write(tabs + "<![CDATA[");
-				write(StringTools.trim(value.nodeValue));
+				write(StringTools.trim(value.nodeValue.value));
 				write("]]>");
 				newline();
 			case Comment:
-				var commentContent:String = value.nodeValue;
+				var commentContent:String = value.nodeValue.value;
 				commentContent = ~/[\n\r\t]+/g.replace(commentContent, "");
 				commentContent = "<!--" + commentContent + "-->";
 				write(tabs);
@@ -66,10 +69,10 @@ class Printer {
 				}
 			case Element:
 				write(tabs + "<");
-				write(value.nodeName);
+				write(value.nodeName.value);
 				for (attribute in value.attributes()) {
 					write(" " + attribute + "=\"");
-					write(StringTools.htmlEscape(value.get(attribute), true));
+					write(StringTools.htmlEscape(value.get(attribute).value, true));
 					write("\"");
 				}
 				if (hasChildren(value)) {
@@ -79,7 +82,7 @@ class Printer {
 						writeNode(child, pretty ? tabs + "\t" : tabs);
 					}
 					write(tabs + "</");
-					write(value.nodeName);
+					write(value.nodeName.value);
 					write(">");
 					newline();
 				} else {
@@ -87,16 +90,16 @@ class Printer {
 					newline();
 				}
 			case PCData:
-				var nodeValue:String = value.nodeValue;
+				var nodeValue:String = value.nodeValue.value;
 				if (nodeValue.length != 0) {
 					write(tabs + StringTools.htmlEscape(nodeValue));
 					newline();
 				}
 			case ProcessingInstruction:
-				write("<?" + value.nodeValue + "?>");
+				write("<?" + value.nodeValue.value + "?>");
 				newline();
 			case DocType:
-				write("<!DOCTYPE " + value.nodeValue + ">");
+				write("<!DOCTYPE " + value.nodeValue.value + ">");
 				newline();
 		}
 	}
@@ -117,7 +120,7 @@ class Printer {
 				case Element, PCData:
 					return true;
 				case CData, Comment:
-					if (StringTools.ltrim(child.nodeValue).length != 0) {
+					if (StringTools.ltrim(child.nodeValue.value).length != 0) {
 						return true;
 					}
 				case _:

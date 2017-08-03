@@ -67,7 +67,7 @@ class Xml {
 	}
 
 	public function toString() {
-		return "Not Implemented;";
+		return csse.xml.Printer.print(this);
 	}
 
 	public function get( att : String ) : PString {
