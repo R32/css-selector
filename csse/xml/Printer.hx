@@ -82,7 +82,7 @@ class Printer {
 						writeNode(child, pretty ? tabs + "\t" : tabs);
 					}
 					write(tabs + "</");
-					write(value.nodeName.value);
+					write(value.nodeName.value.toLowerCase());
 					write(">");
 					newline();
 				} else {

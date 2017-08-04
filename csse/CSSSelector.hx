@@ -401,7 +401,7 @@ class CSSSelector {
 							++left;
 						}
 						if (pos > left) {
-							pos = until(str, left, max, is_number);
+							pos = until(str, left, pos, is_number);
 							m = int(substr());
 							if (minus) m = -m;
 						} else {
