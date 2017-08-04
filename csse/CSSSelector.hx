@@ -170,7 +170,7 @@ class CSSSelector {
 					if (is_alpha_u(c)) {
 						left = pos;
 						pos = until(str, pos + 1, max, is_anum);
-						cur.name = str.substr(left, pos - left);
+						cur.name = str.substr(left, pos - left).toUpperCase();
 						state = RACE;
 						continue;
 					} else if (c == "*".code) {
@@ -489,7 +489,7 @@ class CSSSelector {
 			if (is_alpha_u(c)) {
 				left = pos - 1;
 				pos = until_pos(is_anum);
-				cur.name = substr();
+				cur.name = substr().toUpperCase();
 			} else {
 				Error.exitWith(InvalidChar,charAt(pos - 1), pos - 1, ERR_POS);
 			}
@@ -515,8 +515,9 @@ class CSSSelector {
 		"only-of-type"  : 1,
 		"empty"         : 1,
 		"checked"       : 1,
-		"enabled"       : 1,
 		"disabled"      : 1,
+
+		"enabled"       : 0,
 		"link"          : 0,    // NOEffect
 		"visited"       : 0,
 		"hover"         : 0,
