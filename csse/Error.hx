@@ -37,7 +37,7 @@ class Error {
 		"Invalid Selector",  // -2
 		"Expected",          // ...
 		"Invalid Argument",
-		"Unexpected Whitespace"
+		"Unexpected Whitespace After"
 	];
 }
 

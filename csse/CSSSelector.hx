@@ -50,7 +50,7 @@ class Attrib {
 	}
 	public function toString(): String {
 		return switch (type) {
-		case None:   '[name]';
+		case None:   '[$name]';
 		case Eq:     '[$name=$value]';
 		case Wave:   '[$name~=$value]';
 		case Xor:    '[$name^=$value]';
@@ -102,13 +102,13 @@ class CSSSelector {
 				sa.push('not(${sc.toString()})');
 			case Nth(s, n, m):
 				var sn = switch (n) {
-				case  0: "0n";
+				case  0: "";
 				case  1: "n";
 				case -1: "-n";
 				default:
 					n + "n";
 				}
-				var sm = m == 0 ? "" : (m > 0 ? "+" + m : "" + m);
+				var sm = m == 0 ? "" : (m > 0 && n != 0 ? "+" + m : "" + m);
 				sa.push('$s($sn$sm)');
 			}
 		}
@@ -352,101 +352,111 @@ class CSSSelector {
 		inline function char(p) return str.fastCodeAt(p);
 		inline function charAt(p) return str.charAt(p);
 		inline function substr() return str.substr(left, pos - left);
-		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
-		inline function until_pos(callb) return until(str, pos, max, callb);
 
 		var n = 2, m = 1; // 2n + 1
-		var c: Int;
 		if (str.substr(pos, pos + 4).toLowerCase() == "even") {
 			m = 0;        // 2n + 0
 			pos += 4;
 		} else if (str.substr(pos, pos + 3).toLowerCase() == "odd") {
 			pos += 3;
 		} else {          // .split("n") => [n, m]
-			var minus = false;
 			var x = 0;
+			var minus = false;
+			var c = char(pos);
 			while (pos < max) {
-				c = char(pos);
 				switch (x) {
 				case 0:  // BEGIN
 					switch (c) {
 					case "n".code, "N".code:
-						c = char(left);
 						if (pos == left) {
-							n = 0;
-						} else if (pos - 1 == left) {
-							if (is_number(c)) {
-								n = c - "0".code;
+							n = 1;
+						} else {
+							c = char(left);
+							if (c == "-".code) {
+								minus = true;
+								++ left;
 							} else if (c == "+".code) {
+								minus = false;
+								++ left;
+							}
+							if (pos == left) { // c == "-" || c == "+"
 								n = 1;
-							} else if (c == "-".code) {
-								n = -1;
+							} else if (until(str, left, pos, is_number) == pos) {
+								n = int(substr());
 							} else {
-								Error.exitWith(InvalidChar, charAt(pos - 1), pos - 1, ERR_POS);
-							}
-						} else {
-							minus = c == "-".code;
-							n = Std.parseInt(substr());
-							if (n == null)
 								Error.exitWith(InvalidArgument, substr(), left, ERR_POS);
-							else if (n == 0 && minus == true)
-								n = -1;
-						}
-						x = 1;
-					case ")".code:
-						n = 0;
-						if (pos == left) {
-							Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
-						} else if (pos - left == 1) {
-							c = char(pos - 1);
-							if (is_number(c)) {
-								m = c - "0".code;
-							} else {
-								Error.exitWith(InvalidChar, charAt(pos - 1), pos - 1, ERR_POS);
 							}
-						} else {
-							m = Std.parseInt(substr());
-							if (m == null) Error.exitWith(InvalidArgument, substr(), left, ERR_POS);
+							if (minus) n = -n;
 						}
-						break;
+						x = 1;   // Go Next
+					case ")".code:
+						if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
+						n = 0;
+						c = char(left);
+						if (c == "-".code) {
+							minus = true;
+							++left;
+						} else if (c == "+".code) {
+							minus = false;
+							++left;
+						}
+						if (pos > left) {
+							pos = until(str, left, max, is_number);
+							m = int(substr());
+							if (minus) m = -m;
+						} else {
+							Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
+						}
+						max = 0;  // break loop
+						continue;
 					default:
-						if (is_space(c)) Error.exitWith(UnexpectedWhitespace, charAt(pos), pos, ERR_POS);
+						if (is_space(c) && char(ignore_space(str, pos, max)) != ")".code)
+							Error.exitWith(UnexpectedWhitespace, charAt(pos - 1), pos - 1, ERR_POS);
 					}
 				case 1: // str[pos - 1] = 'n';
 					IGNORE_SPACES();
 					c = char(pos);
-					switch (c) {
-					case "+".code,
-						 "-".code:
-						minus = c == "-".code;
-						x = 2;
-					case ")".code:
+					if (c == ")".code) {
 						m = 0;
-						break;
-					default:
-						Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
-					}
-				case 2: // str[pos - 1] = '+' | '-';
-					IGNORE_SPACES();
-					left = pos;
-					pos = until_pos(is_number);
-					if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
-					if (pos - 1 == left) {
-						c = char(pos - 1);
-						m = c - "0".code;
 					} else {
-						m = Std.parseInt(substr());
+						if (c == "+".code) {
+							minus = false;
+						} else if (c == "-".code) {
+							minus = true;
+						} else {
+							Error.exitWith(Expected, "+/-", pos, ERR_POS);
+						}
+						++ pos;
+						IGNORE_SPACES();
+						left = pos;
+						pos = until(str, pos, max, is_number);
+						if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
+						m = int(substr()); // all is number
+						if (minus) m = -m;
 					}
-					if (minus) m = -m;
-					break;
+					max = 0;  // break loop
+					continue;
 				default:
-				} // end switch(state)
-			++ pos;
-			}     // end white
+				}
+				c = char(++pos);
+			}
 		}
 		cur.pseudo.push(Nth(name, n, m));
 		return pos;
 	}
+
+	// make sure all char is number and s != null and s != ""
+	static function int(s: String): Int {
+		var last = s.length;
+		var r = 0;
+		var mul = 1;
+		while (last-- > 0) {
+			r += (s.fastCodeAt(last) - "0".code) * mul;
+			mul *= 10;
+		}
+		return r;
+	}
+
 	// for ":not( |single-selector| )".
 	static function not(str: String, pos: Int, max: Int, cur: CSSSelector): Int {
 		var left: Int;
@@ -527,10 +537,4 @@ class CSSSelector {
 		"nth-of-type"      : 3,
 		"nth-last-of-type" : 3,
 	}
-}
-
-@:dce @:enum abstract PElemType(Int) to Int {
-	var NOEffect  = 0;
-	var Effect    = 1;
-	var Elements  = 1 << 1;
 }
