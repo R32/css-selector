@@ -84,11 +84,11 @@ class Xml {
 		attributeMap.set(att, value);
 	}
 
-	public function remove( att : PString ) : Void {
+	public function remove( att : String ) : Void {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
-		attributeMap.remove(att.value);
+		attributeMap.remove(att);
 	}
 
 	public function exists( att : String ) : Bool {
@@ -118,7 +118,7 @@ class Xml {
 
 	public function elementsNamed( name : String ) : Iterator<Xml> {
 		ensureElementType();
-		var ret = [for (child in children) if (child.nodeType == Element && child.nodeName.value == name) child];
+		var ret = [for (child in children) if (child.nodeType == Element && child.nodeName.value == name.toUpperCase()) child];
 		return ret.iterator();
 	}
 

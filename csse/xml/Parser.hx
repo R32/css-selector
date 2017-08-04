@@ -107,11 +107,9 @@ class XmlParserException
 
 class Parser
 {
-	static function is_empty(name: String): Bool {
-		name = name.toLowerCase();
-		// empty-element tag
-		// area, base, br, col, embed, hr, img, input, keygen, link, meta, param, source, track, wbr,
-		if (name == "meta" || name == "link" || name == "br" || name == "hr" || name == "input")
+	static function is_empty_elem(name: String): Bool {
+		// AREA, BASE, BR, COL, EMBED, HR, IMG, INPUT, KEYGEN, LINK, META, PARAM, SOURCE, TRACK, WBR,
+		if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT")
 			return true
 		else
 			return false;
@@ -255,7 +253,7 @@ class Parser
 					{
 						if( p == start )
 							throw new XmlParserException("Expected node name", str, p);
-						xml = Xml.createElement({value: str.substr(start, p - start), pos: start});
+						xml = Xml.createElement({value: str.substr(start, p - start).toUpperCase(), pos: start});
 						addChild(xml);
 						state = S.IGNORE_SPACES;
 						next = S.BODY;
@@ -267,7 +265,7 @@ class Parser
 						case '/'.code:
 							state = S.WAIT_END;
 						case '>'.code:
-							if (is_empty(xml.nodeName.value)) // empty-element tag
+							if (is_empty_elem(xml.nodeName.value)) // empty-element tag
 								state = S.BEGIN;
 							else
 								state = S.CHILDS;
@@ -282,7 +280,7 @@ class Parser
 						var tmp;
 						if( start == p )
 							throw new XmlParserException("Expected attribute name", str, p);
-						tmp = str.substr(start,p-start);
+						tmp = str.substr(start,p-start).toLowerCase();
 						aname = tmp;
 						if( xml.exists(aname) )
 							throw new XmlParserException("Duplicate attribute [" + aname + "]", str, p);
@@ -356,7 +354,7 @@ class Parser
 						if( start == p )
 							throw new XmlParserException("Expected node name", str, p);
 
-						var v = str.substr(start,p - start);
+						var v = str.substr(start,p - start).toUpperCase();
 						if (v != parent.nodeName.value)
 							throw new XmlParserException("Expected </" +parent.nodeName + ">", str, p);
 

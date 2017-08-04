@@ -69,7 +69,7 @@ class Printer {
 				}
 			case Element:
 				write(tabs + "<");
-				write(value.nodeName.value);
+				write(value.nodeName.value.toLowerCase());
 				for (attribute in value.attributes()) {
 					write(" " + attribute + "=\"");
 					write(StringTools.htmlEscape(value.get(attribute).value, true));
