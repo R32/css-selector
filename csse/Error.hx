@@ -13,7 +13,7 @@ class Error {
 
 	public static function str(name: String): String {
 		if (no >= 0) return null;
-		return extra != null && extra != ""
+		return extra != null
 			? '$name[${S[-no]}: "$extra", pos: $pos]'
 			: '$name[${S[-no]}, pos: $pos]';
 	}
