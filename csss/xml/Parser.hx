@@ -23,9 +23,9 @@
  // This revision provides pos info that can be used to locate invalid value/attr.
  // And accept a few empty-element with no closing tag.
 
-package csse.xml;
+package csss.xml;
 
-import csse.Xml;
+import csss.Xml;
 using StringTools;
 
 

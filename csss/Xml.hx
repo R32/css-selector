@@ -24,7 +24,7 @@
  // This revision provides pos info that can be used to locate invalid value/attr.
  //
 
-package csse;
+package csss;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType
 @:enum abstract XmlType(Int) to Int {
@@ -45,7 +45,35 @@ package csse;
 		this.value = value;
 		this.pos = pos;
 	}
+	public inline function toString(): String {
+		return this.value;
+	}
+
+	public inline static function eq(ps: PString, val: String): Bool {
+		return ps != null && val != null && val != "" && ps.value == val;
+	}
+
+	public inline static function attr(xml: Xml, name): String {
+		var p = xml.get(name);
+		return p == null ? null : p.value;
+	}
+
+	public inline static function name(xml: Xml): String {
+		var p = xml.nodeName;
+		return p == null ? null : p.value;
+	}
+
+	public inline static function text(xml: Xml): String {
+		var p = xml.nodeValue;
+		return p == null ? null : p.value;
+	}
 }
+
+#if js
+typedef Dict<T> = haxe.DynamicAccess<T>;
+#else
+typedef Dict<T> = haxe.ds.StringMap<T>;
+#end
 
 /**
 Xml with Position
@@ -58,23 +86,23 @@ class Xml {
 	public var parent(default, null): Xml;
 
 	var children: Array<Xml>;
-	var attributeMap:Map<String, PString>;
+	var attributeMap: Dict<PString>;
 
 	public function new(nodeType) {
 		this.nodeType = nodeType;
 		children = [];
-		attributeMap = new Map();
+		attributeMap = new Dict();
 	}
 
 	public function toString() {
-		return csse.xml.Printer.print(this);
+		return csss.xml.Printer.print(this);
 	}
 
 	public function get( att : String ) : PString {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
-		return attributeMap[att];
+		return attributeMap.get(att);
 	}
 
 	public function set( att : String, value : PString ) : Void {
@@ -102,7 +130,11 @@ class Xml {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
+		#if js
+		return attributeMap.keys().iterator();
+		#else
 		return attributeMap.keys();
+		#end
 	}
 
 	public inline function iterator() : Iterator<Xml> {
@@ -170,6 +202,7 @@ class Xml {
 		}
 	}
 
+	// Note: Use UpperCase for name.
 	static public function createElement( name : PString ) : Xml {
 		var xml = new Xml(Element);
 		xml.nodeName = name;

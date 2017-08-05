@@ -1,4 +1,4 @@
-package csse;
+package csss;
 
 using StringTools;
 

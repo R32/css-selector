@@ -1,10 +1,10 @@
-package csse;
+package csss;
 
-import csse.CSSSelector;
+import csss.Selector;
 
-class CSSSTools {
+class SelectorTools {
 
-	public static function toString(sel: CSSSelector) {
+	public static function toString(sel: Selector) {
 		var name = sel.name;
 		var id = sel.id;
 		var sid = id == null || id == "" ? "" : '#$id';
@@ -20,10 +20,10 @@ class CSSSTools {
 		}
 	}
 
-	static function pse2str(sel: CSSSelector): String {
+	static function pse2str(sel: Selector): String {
 		if (sel.pseudo.length == 0) return "";
 		var sa = [""];
-		var mp = CSSSelector.mp;
+		var mp = Selector.mp;
 		for (pe in sel.pseudo) {
 			switch (pe) {
 			case Classes(t):

@@ -1,8 +1,9 @@
 package test;
 
-import csse.CSSSelector;
-import csse.Xml;
-import csse.xml.Parser;
+import csss.Selector;
+import csss.Xml;
+import csss.xml.Parser;
+import csss.Query;
 
 class Test {
 
@@ -11,11 +12,23 @@ class Test {
 		t2();
 	}
 	static function t1() {
-		var c1 = "a li#uniq.btn.btn-primary:nth-child(-0n+1)[title][name^=hello], div:first-child > span:not(.abc)";
-		var list = CSSSelector.parse(c1);
-		if (list == null) return;
-		var s = [for (c in list) c.toString()].join(", ");
-		trace(s);
+		var a = [
+			"a li#uniq.btn.btn-primary[title][name^=hello]:empty",
+			"a span, a li:not(:first-child) > span[title]:",
+			"a.btn:nth-child( -201 )",
+			":nth-child(-n+01)",
+			":nth-child(-0n+20)", //
+			":nth-child(+0n+003)", //
+			":nth-last-child(0n - 40)",
+			":nth-last-child(+210n + 50)",
+			":nth-last-child(n)",
+		];
+		for (sel in a) {
+			var list = Selector.parse(sel);
+			if (list == null) return;
+			var s = [for (c in list) c.toString()].join(", ");
+			trace(s);
+		}
 	}
 
 	macro static function t2() {

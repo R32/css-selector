@@ -1,6 +1,6 @@
-package csse;
+package csss;
 
-import csse.CValid.*;
+import csss.CValid.*;
 using StringTools;
 
 @:dce @:enum abstract ChildType(Int) to Int {
@@ -9,7 +9,7 @@ using StringTools;
 	var Child   = ">".code;
 	var Adjoin  = "+".code;
 	var Sibling = "~".code;
-	@:allow(csse.CSSSelector) private static inline function ofInt(n: Int):ChildType return cast n;
+	@:allow(csss.Selector) private static inline function ofInt(n: Int):ChildType return cast n;
 }
 
 @:dce @:enum abstract AttrType(Int) to Int {
@@ -20,7 +20,7 @@ using StringTools;
 	var Dollar = "$".code;
 	var All    = "*".code;
 	var Or     = "|".code;
-	@:allow(csse.CSSSelector) private static inline function ofInt(i: Int):AttrType return cast i;
+	@:allow(csss.Selector) private static inline function ofInt(i: Int):AttrType return cast i;
 }
 
 @:dce @:enum abstract PClsType(Int) to Int {
@@ -34,7 +34,7 @@ using StringTools;
 	var Empty       =  8;
 	var Checked     =  9;
 	var Disabled    = 10;
-	@:allow(csse.CSSSelector) private static inline function ofInt(i: Int):PClsType return cast i;
+	@:allow(csss.Selector) private static inline function ofInt(i: Int):PClsType return cast i;
 }
 
 @:dce @:enum abstract PElemType(Int) to Int {
@@ -42,13 +42,13 @@ using StringTools;
 	var NthLastChild   = 104;
 	var NthOfType      = 105;
 	var	NthLastOfType  = 106;
-	@:allow(csse.CSSSelector) private static inline function ofInt(i: Int):PElemType return cast i;
+	@:allow(csss.Selector) private static inline function ofInt(i: Int):PElemType return cast i;
 }
 
 enum PElem {
 	Classes(name: PClsType);
 	Lang(s: String);
-	Not(sc: CSSSelector);
+	Not(sc: Selector);
 	Nth(name: PElemType, n: Int, m: Int);
 }
 
@@ -92,10 +92,10 @@ class Attrib {
 	var PSEUDO	= 5;
 }
 
-class CSSSelector {
+class Selector {
 	public var name: String;
 	public var id: String;
-	public var sub: CSSSelector;
+	public var sub: Selector;
 	public var rela: ChildType;
 	public var classes: Array<String>;
 	public var pseudo: Array<PElem>;
@@ -112,7 +112,7 @@ class CSSSelector {
 	}
 
 	public inline function toString(): String {
-		return CSSSTools.toString(this);
+		return SelectorTools.toString(this);
 	}
 
 	/**
@@ -120,11 +120,11 @@ class CSSSelector {
 	* @param s xml string
 	* @return
 	*/
-	public static function parse(s: String): Array<CSSSelector> {
-		var list: Array<CSSSelector> = null;
+	public static function parse(s: String): Array<Selector> {
+		var list: Array<Selector> = null;
 		Error.clear();
 		if (s != null && s != "" ) {
-			list = [new CSSSelector(None)];
+			list = [new Selector(None)];
 			doParse(s, 0, s.length, list[0], list);
 		} else {
 			Error.set(InvalidSelector, s, 0);
@@ -135,7 +135,7 @@ class CSSSelector {
 		return list;
 	}
 
-	static function doParse(str: String, pos: Int, max: Int, cur: CSSSelector, list: Array<CSSSelector>): Void {
+	static function doParse(str: String, pos: Int, max: Int, cur: Selector, list: Array<Selector>): Void {
 		var state = NEW;
 		var next = NEW;
 		var left: Int;
@@ -183,7 +183,7 @@ class CSSSelector {
 				case ":".code:
 					state = PSEUDO;
 				case ",".code: // group
-					var sib = new CSSSelector(None);
+					var sib = new Selector(None);
 					list.push(sib);
 					doParse(str, pos + 1, max, sib, list);
 					return;
@@ -198,7 +198,7 @@ class CSSSelector {
 						pos = ignore_space(str, pos + 1, max);
 						rel = ChildType.ofInt(c);
 					}
-					cur.sub = new CSSSelector(rel);
+					cur.sub = new Selector(rel);
 					doParse(str, pos, max, cur.sub, list);
 					return;
 				default:
@@ -234,7 +234,7 @@ class CSSSelector {
 	}
 
 	// str[pos-1] == ":"
-	static function on_pseudo(str: String, pos: Int, max: Int, cur: CSSSelector): Int {
+	static function on_pseudo(str: String, pos: Int, max: Int, cur: Selector): Int {
 		var left = pos;
 
 		inline function IGNORE_SPACES() pos = ignore_space(str, pos, max);
@@ -261,7 +261,7 @@ class CSSSelector {
 				if (pos == left) Error.exitWith(InvalidChar, charAt(pos), pos, ERR_POS);
 				cur.pseudo.push(Lang(substr()));
 			case "not": // TODO
-				var no = new CSSSelector(None);
+				var no = new Selector(None);
 				pos = not(str, pos, max, no);
 				if (pos == ERR_POS) return -1;
 				cur.pseudo.push(Not(no));
@@ -281,7 +281,7 @@ class CSSSelector {
 		return pos;
 	}
 	// str[pos-1] == "["
-	static function on_attr(str: String, pos: Int, max: Int, cur: CSSSelector): Int {
+	static function on_attr(str: String, pos: Int, max: Int, cur: Selector): Int {
 		var left: Int;
 
 		inline function IGNORE_SPACES() pos = ignore_space(str, pos, max);
@@ -339,7 +339,7 @@ class CSSSelector {
 		return pos;
 	}
 
-	static function nth(str: String, pos: Int, max: Int, cur: CSSSelector, type: PElemType): Int {
+	static function nth(str: String, pos: Int, max: Int, cur: Selector, type: PElemType): Int {
 		var left = pos;
 
 		inline function IGNORE_SPACES() pos = ignore_space(str, pos, max);
@@ -452,7 +452,7 @@ class CSSSelector {
 	}
 
 	// for ":not( |single-selector| )".
-	static function not(str: String, pos: Int, max: Int, cur: CSSSelector): Int {
+	static function not(str: String, pos: Int, max: Int, cur: Selector): Int {
 		var left: Int;
 
 		inline function char(p) return str.fastCodeAt(p);
@@ -511,7 +511,7 @@ class CSSSelector {
 		"checked"       :  9,
 		"disabled"      : 10,
 		// psuedo elements
-		"lang"             : 101, // Effect | Elements
+		"lang"             : 101,
 		"not"              : 102,
 		"nth-child"        : 103,
 		"nth-last-child"   : 104,

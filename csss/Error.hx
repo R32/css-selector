@@ -1,4 +1,4 @@
-package csse;
+package csss;
 
 class Error {
 	public static var no(default, null): Int;
@@ -23,11 +23,11 @@ class Error {
 	}
 
 	macro public static function exit(message, extra, pos) return macro @:mergeBlock {
-		csse.Error.set($message, $extra, $pos);
+		csss.Error.set($message, $extra, $pos);
 		return;
 	}
 	macro public static function exitWith(message, extra, pos, retval) return macro @:mergeBlock {
-		csse.Error.set($message, $extra, $pos);
+		csss.Error.set($message, $extra, $pos);
 		return $retval;
 	}
 

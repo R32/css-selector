@@ -19,12 +19,12 @@
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="nodejs&#xA;analyzer-optimize&#xA;old-error-format" />
+    <option directives="js-es=3&#xA;analyzer-optimize&#xA;old-error-format" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="test.Test" />
     <option enabledebug="False" />
-    <option additional="-dce full" />
+    <option additional="-dce std&#xA;-resource bin/index.html@myxml" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>

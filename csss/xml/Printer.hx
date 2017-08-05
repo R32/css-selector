@@ -23,7 +23,7 @@
  //
  //
 
-package csse.xml;
+package csss.xml;
 
 /**
 	This class provides utility methods to convert Xml instances to
