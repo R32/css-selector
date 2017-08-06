@@ -24,7 +24,7 @@
  // This revision provides pos info that can be used to locate invalid value/attr.
  //
 
-package csss;
+package csss.xml;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType
 @:enum abstract XmlType(Int) to Int {
@@ -36,37 +36,6 @@ package csss;
 	var Comment = 8;
 	var Document = 9;
 	var DocType = 10;
-}
-
-@:structInit class PString {
-	public var pos(default, null): Int;
-	public var value(default, null): String;
-	public function new(value, pos) {
-		this.value = value;
-		this.pos = pos;
-	}
-	public inline function toString(): String {
-		return this.value;
-	}
-
-	public inline static function eq(ps: PString, val: String): Bool {
-		return ps != null && val != null && val != "" && ps.value == val;
-	}
-
-	public inline static function attr(xml: Xml, name): String {
-		var p = xml.get(name);
-		return p == null ? null : p.value;
-	}
-
-	public inline static function name(xml: Xml): String {
-		var p = xml.nodeName;
-		return p == null ? null : p.value;
-	}
-
-	public inline static function text(xml: Xml): String {
-		var p = xml.nodeValue;
-		return p == null ? null : p.value;
-	}
 }
 
 #if js

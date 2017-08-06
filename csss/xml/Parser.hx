@@ -25,7 +25,7 @@
 
 package csss.xml;
 
-import csss.Xml;
+import csss.xml.Xml;
 using StringTools;
 
 
