@@ -13,7 +13,7 @@ class NM {
 		this.n = n;
 		this.m = m;
 	}
-	public inline function toString() return '${n}n+$m';
+	public function toString() return '${n}n+$m';
 
 	public inline function copy() return new NM(n, m);
 
@@ -69,5 +69,51 @@ class NM {
 			return b;
 		else
 			return gcd(b, t);
+	}
+}
+
+class PNM extends NM {
+	public var max(default, null): Int;
+	function new(n, m, max) {
+		this.max = max;
+		super(n, m);
+	}
+
+	//override public function toString() return '${n}n+$m, [$max]';
+
+	// for: nth-child(-2+10), (-3+10)
+	public static function ofNM(A: NM): PNM {
+		var n = A.n;
+		var m = A.m;
+		var max = -1;
+		if (n < 0) {
+			if (m < 0) {
+				n = m = max = 0;   // union with any NM that will getting null
+			} else {
+				max = m;
+				n = -n;
+				m = max % n;
+			}
+		}
+		return new PNM(n, m, max);
+	}
+
+	// for: when get the max value then do nth-last-child(2n+1) => nth-child(n, m), max
+	public static function ofLastNM(A: NM, max: Int) {
+		var n = A.n;
+		var m = A.m;
+		if (n < 0) {
+			if (m < 0) {
+				n = m = max = 0;
+			} else {
+				m = max + 1 - m;
+				n = -n;
+				max = max + 1 - n;
+			}
+		} else {
+			max = max + 1 - m;
+			m = max % n;
+		}
+		return new PNM(n, m, max);
 	}
 }
