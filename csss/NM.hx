@@ -19,8 +19,8 @@ class NM {
 
 	public static function union(A: NM, B: NM) {
 		if (A.n < 0 || B.n < 0) return null;
-		if (A.n == 0) return ((A.m - B.m) % A.n) == 0 ? A.copy() : null;
-		if (B.n == 0) return ((B.m - A.m) % B.n) == 0 ? B.copy() : null;
+		if (A.n == 0) return (A.m >= B.m && ((A.m - B.m) % A.n) == 0) ? A.copy() : null;
+		if (B.n == 0) return (B.m >= A.m && ((B.m - A.m) % B.n) == 0) ? B.copy() : null;
 		if (A.n < B.n || A.n == B.n && A.m < B.m) {  // swap
 			var t = A;
 			A = B;
@@ -30,7 +30,7 @@ class NM {
 		}
 		var n = lcm(A.n, B.n);
 		var m = 0;
-		var i = 1;
+		var i = 0;
 		while (true) {
 			m = A.n * i + A.m;
 			if (!(m < n) || (m - B.m) % B.n == 0) break;
