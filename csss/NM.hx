@@ -30,13 +30,14 @@ class NM {
 		}
 		var n = lcm(A.n, B.n);
 		var m = 0;
-		var i = 0;
-		while (true) {
+		var i = B.m < A.m ? 0 : Std.int((B.m - A.m) / A.n);
+		var max = i + n;
+		while (i < max) {
 			m = A.n * i + A.m;
-			if (!(m < n) || (m - B.m) % B.n == 0) break;
+			if ((m - B.m) % B.n == 0) break;
 			++i;
 		}
-		return m < n ? new NM(n, m) : null;
+		return i < max ? new NM(n, m) : null;
 	}
 
 	// least common multiple
