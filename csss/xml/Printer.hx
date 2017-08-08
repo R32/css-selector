@@ -29,6 +29,9 @@ package csss.xml;
 	This class provides utility methods to convert Xml instances to
 	String representation.
 **/
+#if NO_POS
+typedef Printer = haxe.xml.Printer;
+#else
 class Printer {
 	/**
 		Convert `Xml` to string representation.
@@ -129,3 +132,4 @@ class Printer {
 		return false;
 	}
 }
+#end

@@ -105,6 +105,9 @@ class XmlParserException
 	}
 }
 
+#if NO_POS
+typedef Parser = haxe.xml.Parser
+#else
 class Parser
 {
 	static function is_empty_elem(name: String): Bool {
@@ -466,3 +469,4 @@ class Parser
 		return (c >= 'a'.code && c <= 'z'.code) || (c >= 'A'.code && c <= 'Z'.code) || (c >= '0'.code && c <= '9'.code) || c == ':'.code || c == '.'.code || c == '_'.code || c == '-'.code;
 	}
 }
+#end

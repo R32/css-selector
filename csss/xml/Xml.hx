@@ -26,6 +26,41 @@
 
 package csss.xml;
 
+#if NO_POS
+typedef Xml = std.Xml;
+
+// fake
+abstract PString(String) to String from String {
+	public inline function new(s: String) this = s;
+
+	public var value(get, set): String;
+	inline function get_value(): String return this;
+	inline function set_value(s: String): String return this = s;
+
+	public var pos(get, set): Int;
+	inline function get_pos(): Int return 0;
+	inline function set_pos(s: Int): Int return 0;
+
+	public inline function toString(): String return this;
+
+	public inline static function eq(ps: PString, val: String): Bool {
+		return ps != null && ps != "" && ps == val;
+	}
+
+	public inline static function attr(xml: Xml, name): String {
+		return xml.get(name);
+	}
+
+	public inline static function name(xml: Xml): String {
+		return xml.nodeName;
+	}
+
+	public inline static function text(xml: Xml): String {
+		return xml.nodeValue;
+	}
+}
+
+#else
 // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType
 @:enum abstract XmlType(Int) to Int {
 	var Element = 1;
@@ -38,15 +73,7 @@ package csss.xml;
 	var DocType = 10;
 }
 
-#if js
-typedef Dict<T> = haxe.DynamicAccess<T>;
-#else
-typedef Dict<T> = haxe.ds.StringMap<T>;
-#end
-
-/**
-Xml with Position
-*/
+// Xml with Position
 class Xml {
 
 	public var nodeType(default, null): XmlType;
@@ -212,3 +239,36 @@ class Xml {
 		return new Xml(Document);
 	}
 }
+
+@:structInit class PString {
+	public var pos(default, null): Int;
+	public var value(default, null): String;
+	public function new(value, pos) {
+		this.value = value;
+		this.pos = pos;
+	}
+	public inline function toString(): String {
+		return this.value;
+	}
+
+	public inline static function eq(ps: PString, val: String): Bool {
+		return ps != null && val != "" && ps.value == val;
+	}
+
+	public inline static function attr(xml: Xml, name): String {
+		var p = xml.get(name);
+		return p == null ? null : p.value;
+	}
+
+	public inline static function name(xml: Xml): String {
+		var p = xml.nodeName;
+		return p == null ? null : p.value;
+	}
+
+	public inline static function text(xml: Xml): String {
+		var p = xml.nodeValue;
+		return p == null ? null : p.value;
+	}
+}
+
+#end
