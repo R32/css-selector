@@ -91,12 +91,16 @@ class Test {
 		js.Lib.global.qq = function(str: String) {
 			trace('run body.querySelector("$str")...');
 			var x = body.querySelector(str);
-			var s = "";
-			for (k in x.attributes()) {
-				if (k.charCodeAt(0) != ":".code)
-					s += ' $k="${x.get(k)}"';
+			if (x == null) {
+				trace(x);
+			} else {
+				var s = "";
+				for (k in x.attributes()) {
+					if (k.charCodeAt(0) != ":".code)
+						s += ' $k="${x.get(k)}"';
+				}
+				trace("<" + x.nodeName + s + ">");
 			}
-			trace("<"+ x.nodeName + s + ">");
 		}
 
 		js.Lib.global.qa = function(str: String) {
