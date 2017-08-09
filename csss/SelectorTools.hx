@@ -13,8 +13,8 @@ class SelectorTools {
 		var spse = pse2str(sel);
 
 		if (sel.sub != null) {
-			var srela = sel.sub.rela == Space ? " " : (" " + String.fromCharCode(sel.sub.rela) + " ");
-			return '$name$sattr$sid$sclasses$spse$srela${sel.sub.toString()}';
+			var sctype = sel.sub.ctype == Space ? " " : (" " + String.fromCharCode(sel.sub.ctype) + " ");
+			return '$name$sattr$sid$sclasses$spse$sctype${sel.sub.toString()}';
 		} else {
 			return '$name$sattr$sid$sclasses$spse';
 		}

@@ -96,16 +96,16 @@ class Selector {
 	public var name: String;
 	public var id: String;
 	public var sub: Selector;
-	public var rela: ChildType;
+	public var ctype: ChildType;
 	public var classes: Array<String>;
 	public var pseudo: Array<PElem>;
 	public var attr: Array<Attrib>;
 
-	public function new(rel) {
+	public function new(ct) {
 		name = "";
 		id = null;
 		sub = null;
-		rela = rel;
+		ctype = ct;
 		classes = [];
 		pseudo = [];
 		attr = [];
@@ -162,7 +162,11 @@ class Selector {
 					if (is_alpha_u(c)) {
 						left = pos;
 						pos = until(str, pos + 1, max, is_anum);
+					#if NO_POS
+						cur.name = str.substr(left, pos - left).toLowerCase();
+					#else
 						cur.name = str.substr(left, pos - left).toUpperCase();
+					#end
 						state = RACE;
 						continue;
 					} else if (c == "*".code) {
@@ -483,7 +487,11 @@ class Selector {
 			if (is_alpha_u(c)) {
 				left = pos - 1;
 				pos = until_pos(is_anum);
+			#if NO_POS
+				cur.name = substr().toLowerCase();
+			#else
 				cur.name = substr().toUpperCase();
+			#end
 			} else {
 				Error.exitWith(InvalidChar,charAt(pos - 1), pos - 1, ERR_POS);
 			}
@@ -502,11 +510,11 @@ class Selector {
 		// psuedo classes
 		"root"          :  1,
 		"first-child"   :  2,
-		"last-child"    :  3,
-		"only-child"    :  4,
-		"first-of-type" :  5,
-		"last-of-type"  :  6,
-		"only-of-type"  :  7,
+		//"last-child"    :  3,
+		//"only-child"    :  4,
+		//"first-of-type" :  5,
+		//"last-of-type"  :  6,
+		//"only-of-type"  :  7,
 		"empty"         :  8,
 		"checked"       :  9,
 		"disabled"      : 10,
@@ -514,8 +522,8 @@ class Selector {
 		"lang"             : 101,
 		"not"              : 102,
 		"nth-child"        : 103,
-		"nth-last-child"   : 104,
-		"nth-of-type"      : 105,
-		"nth-last-of-type" : 106,
+		//"nth-last-child"   : 104,
+		//"nth-of-type"      : 105,
+		//"nth-last-of-type" : 106,
 	}
 }
