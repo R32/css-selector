@@ -132,7 +132,7 @@ class Query {
 		}
 	}
 
-	function one(children: Array<Xml>, i: Int, max: Int, sel: Selector, rec: Bool): Xml {
+	function search(children: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Xml {
 		if (sel.fs == null) sel.calcFilters();
 		var fs = sel.fs;
 		if (fs.length == 0) {
@@ -143,43 +143,58 @@ class Query {
 		var xml: Xml;
 		var prev: State;
 		var ret = null;
-		var j = 0;
-
+		var ctype: ChildType;
 		inline function saveState() {prev = state; state = None;}
-		inline function resState() {state = prev;}
+		inline function resState() { state = prev; }
 
 		while (i < max) {
 			xml = children[i];
 			if (xml.nodeType == Element) {
-				if (applyFilters(xml, fs, j)) { // state is None or BreakCurrent when true.
+
+				if (applyFilters(xml, fs, j)) {
 					if (sel.sub == null) return xml;
+					ctype = sel.sub.ctype;
+				} else {
+					ctype = None;
+				}
+
+				// state could be None, BreakCurrent, NoNeed(e.g.:finded ID) when succeed
+				if (ctype == Space || ctype == Child) {
 					saveState();
-					switch (sel.sub.ctype) {
-					case Space:
-						ret = one(xml.children, 0, xml.children.length, sel.sub, true);
-					case Child:
-						ret = one(xml.children, 0, xml.children.length, sel.sub, false);
-					case Adjoin:
-						i = elemNext(children, i + 1, max);
-						ret = one(children, i , i + 1, sel.sub, false);
-						-- i;     // restore
-					case Sibling:
-						ret = one(children, i + 1, max, sel.sub, false);
-					case None:    // if None, it's csss.Selector.parse ERROR
+					if (ctype == Space) {  // E   F
+						ret = search(xml.children, 0, xml.children.length, 0, sel.sub, true);
+					} else {               // E > F
+						ret = search(xml.children, 0, xml.children.length, 0, sel.sub, false);
 					}
 					if (ret != null) return ret;
-					if (state == NoNeed || state == Invalid) break;
+					if (state == Invalid) break;
 					resState();
 				}
-				if (state == NoNeed || state == Invalid) break;
-				if (rec) {
+
+				if (rec && state != Invalid) { // recursive
 					saveState();
-					ret = one(xml.children, 0, xml.children.length, sel, true);
+					ret = search(xml.children, 0, xml.children.length, 0, sel, true);
 					if (ret != null) return ret;
-					if (state == NoNeed || state == Invalid) break;
+					if (state == Invalid) break;
 					resState();
 				}
-				if (state == BreakCurrent) break;
+
+				if (ctype == Adjoin || ctype == Sibling) {
+					saveState();
+					if (ctype == Adjoin) { // E + F
+						i = elemNext(children, i + 1, max);
+						if (i == -1) break;
+						ret = search(children, i , i + 1, j, sel.sub, false);
+						-- i;
+					} else {               // E ~ F
+						// TODO: 需要重写 Sibling 的查找. 因为很可能有其它的子元素会被优先匹配到。
+						ret = search(children, i + 1, max, j, sel.sub, false);
+					}
+					if (ret != null) return ret;
+					if (state == Invalid) break;
+					resState();
+				}
+				if (state != None) break;
 				++ j;
 			}
 			++ i;
@@ -187,7 +202,7 @@ class Query {
 		return ret;
 	}
 
-	function all(out: Array<Xml>, children: Array<Xml>, i: Int, max: Int, sel: Selector, rec: Bool): Void {
+	function searchAll(out: Array<Xml>, children: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Void {
 		if (sel.fs == null) sel.calcFilters();
 		var fs = sel.fs;
 		if (fs.length == 0) {
@@ -197,8 +212,7 @@ class Query {
 
 		var xml: Xml;
 		var prev: State;
-		var j = 0;
-
+		var ctype: ChildType;
 		inline function saveState() {prev = state; state = None;}
 		inline function resState() {state = prev;}
 
@@ -209,33 +223,48 @@ class Query {
 				if (applyFilters(xml, fs, j)) {
 					if (sel.sub == null) {
 						out.push(xml);
-					} else {
-						saveState();
-						switch (sel.sub.ctype) {
-						case Space:
-							all(out, xml.children, 0, xml.children.length, sel.sub, true);
-						case Child:
-							all(out, xml.children, 0, xml.children.length, sel.sub, false);
-						case Adjoin:
-							i = elemNext(children, i + 1, max);
-							all(out, children, i, i + 1, sel.sub, false);
-							-- i;
-						case Sibling:
-							all(out, children, i + 1,   max, sel.sub, false);
-						case None:
-						}
-						if (state == Invalid) break;
-						resState();
+						++ i;
+						++ j;
+						continue;
 					}
+					ctype = sel.sub.ctype;
+				} else {
+					ctype = None;
 				}
-				if (state == NoNeed || state == Invalid) break;
-				if (rec) {
+
+				if (ctype == Space || ctype == Child) {
 					saveState();
-					all(out, xml.children, 0, xml.children.length, sel, true);
-					if (state == NoNeed || state == Invalid) break;
+					if (ctype == Space) {  // E   F
+						searchAll(out, xml.children, 0, xml.children.length, 0, sel.sub, true);
+					} else {               // E > F
+						searchAll(out, xml.children, 0, xml.children.length, 0, sel.sub, false);
+					}
+					if (state == Invalid) break;
 					resState();
 				}
-				if (state == BreakCurrent) break;
+
+				if (rec && state != Invalid) { // recursive
+					saveState();
+					searchAll(out, xml.children, 0, xml.children.length, 0, sel, true);
+					if (state == Invalid) break;
+					resState();
+				}
+
+				if (ctype == Adjoin || ctype == Sibling) {
+					saveState();
+					if (ctype == Adjoin) { // E + F
+						i = elemNext(children, i + 1, max);
+						if (i == -1) break;
+						searchAll(out, children, i , i + 1, j, sel.sub, false);
+						-- i;
+					} else {               // E ~ F
+						// TODO: 需要重写 Sibling 的查找. 因为很可能有其它的子元素会被优先匹配到。
+						searchAll(out, children, i + 1, max, j, sel.sub, false);
+					}
+					if (state == Invalid) break;
+					resState();
+				}
+				if (state != None) break;
 				++ j;
 			}
 			++ i;
@@ -244,24 +273,28 @@ class Query {
 
 	static function elemNext(a: Array<Xml>, i, max):Int {
 		while (i < max) {
-			if (a[i].nodeType == Element) break;
+			if (a[i].nodeType == Element) return i;
 			++ i;
 		}
-		return i;
+		return -1;
 	}
 
-	public static function querySelector(top: Xml, selector: String): Xml {
+	public static inline function querySelector(top: Xml, s: String): Xml {
+		return one(top, s);
+	}
+
+	public static function one(top: Xml, s: String): Xml {
 		var ret = null;
 		if (top.nodeType != Document && top.nodeType != Element) return ret;
 		var q = new Query();
-		var sa = Selector.parse(selector);
+		var sa = Selector.parse(s);
 		if (sa == null) return null;
 		if (sa.length == 1) {
-			return q.one(top.children, 0, top.children.length, sa[0], true);
+			return q.search(top.children, 0, top.children.length, 0, sa[0], true);
 		} else {
 			var r = [];
 			for (sel in sa) {
-				var x = q.one(top.children, 0, top.children.length, sel, true);
+				var x = q.search(top.children, 0, top.children.length, 0, sel, true);
 				if (x != null)
 					r.push(x);
 			}
@@ -280,18 +313,21 @@ class Query {
 		}
 	}
 
-	public static function querySelectorAll(top: Xml, selector: String): Array<Xml> {
+	public static inline function querySelectorAll(top: Xml, s: String): Array<Xml> {
+		return all(top, s);
+	}
+	public static function all(top: Xml, s: String): Array<Xml> {
 		var ret = [];
 		if (top.nodeType != Document && top.nodeType != Element) return ret;
 
-		var sa = Selector.parse(selector);
+		var sa = Selector.parse(s);
 		if (sa == null) return null;
 		var q = new Query();
 		if (sa.length == 1) {
-			q.all(ret, top.children, 0, top.children.length, sa[0], true);
+			q.searchAll(ret, top.children, 0, top.children.length, 0, sa[0], true);
 		} else {
 			for (sel in sa) {
-				q.all(ret, top.children, 0, top.children.length, sel, true);
+				q.searchAll(ret, top.children, 0, top.children.length, 0, sel, true);
 			}
 			var p = [];
 			for (x in ret) {

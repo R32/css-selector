@@ -9,18 +9,17 @@ CSS-Selector With a Modified Xml Parser
 
 * Not based on RegExp
 
-* querySelector & querySelectorAll see [Query.hx](csss/Query.hx?ts=4)
+* `querySelector/one` and `querySelectorAll/all` see [Query.hx](csss/Query.hx?ts=4)
 
   ```
   E :   supported
   E F : supported
   E > F : supported
   E + F : supported
-  E ~ F : supported
+  E ~ F : supported  Note: unresolved issue..
   ```
 
   supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L535-L550)
-
 
 example:
 
@@ -39,10 +38,10 @@ class Main {
         var file = sys.io.File.getContent(myxml);
         var body = Parser.parse(file, false).querySelector("body");
 
-        var x = body.querySelector(".t2 span");
+        var x = body.querySelector(".t2 span");                              // equal body.one(".t2 span")
         trace(str(x));
 
-        var a = body.querySelectorAll(".selector-test > :nth-child(2n+1)");
+        var a = body.querySelectorAll(".selector-test > :nth-child(2n+1)");  // equal body.all("...")
         for (x in a) {
             trace(str(x));
         }
