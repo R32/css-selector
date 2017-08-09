@@ -83,6 +83,14 @@ class Attrib {
 	var UnexpectedWhitespace = -5;
 }
 
+enum Filter {
+	Name(name: String);
+	Id(s: String);
+	Cls(c: String);
+	Attr(a: Attrib);
+	PSU(p: PElem);
+}
+
 @:dce @:enum private abstract State(Int) to Int {
 	var NEW		= 0;
 	var RACE	= 1;
@@ -100,6 +108,7 @@ class Selector {
 	public var classes: Array<String>;
 	public var pseudo: Array<PElem>;
 	public var attr: Array<Attrib>;
+	public var fs: Array<Filter>;
 
 	public function new(ct) {
 		name = "";
@@ -109,10 +118,24 @@ class Selector {
 		classes = [];
 		pseudo = [];
 		attr = [];
+		fs = null;
 	}
 
 	public inline function toString(): String {
 		return SelectorTools.toString(this);
+	}
+
+	public function calcFilters() {
+		var cur = this;
+		while (cur != null) {
+			cur.fs = [];
+			if (cur.id != null && cur.id != "") cur.fs.push( Id(cur.id) );
+			if (cur.name != "") cur.fs.push(Name(cur.name));
+			for (p in cur.pseudo) cur.fs.push(PSU(p));
+			for (s in cur.classes) cur.fs.push(Cls(s));
+			for (a in cur.attr) cur.fs.push(Attr(a));
+			cur = cur.sub;
+		}
 	}
 
 	/**

@@ -15,6 +15,8 @@ class NM {
 	}
 	public function toString() return '${n}n+$m';
 
+	public inline function valid(i: Int) return i >= m && (i - m) % n == 0;
+
 	public inline function copy() return new NM(n, m);
 
 	public static function union(A: NM, B: NM) {
@@ -79,16 +81,14 @@ class PNM extends NM {
 		super(n, m);
 	}
 
-	//override public function toString() return '${n}n+$m, [$max]';
-
-	// for: nth-child(-2+10), (-3+10)
+	// for :nth-child() when "n" is less than 0.
 	public static function ofNM(A: NM): PNM {
 		var n = A.n;
 		var m = A.m;
 		var max = -1;
 		if (n < 0) {
 			if (m < 0) {
-				n = m = max = 0;   // union with any NM that will getting null
+				n = m = max = 0;
 			} else {
 				max = m;
 				n = -n;

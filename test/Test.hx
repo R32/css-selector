@@ -1,12 +1,11 @@
 package test;
 
-#if !NO_POS
 import csss.xml.Parser;
-#else
-import haxe.xml.Parser;
-#end
+import csss.xml.Xml;
 import csss.Selector;
 import csss.NM;
+import csss.Path;
+using csss.Query;
 
 class Test {
 
@@ -56,7 +55,8 @@ class Test {
 	static function main() {
 		//t1();
 		//t2();
-		t3();
+		//t3();
+		t4();
 	}
 	static function t1() {
 		var a = [
@@ -78,6 +78,42 @@ class Test {
 		}
 	}
 
+	static function t4() @:privateAccess {
+		var txt = haxe.Resource.getString("myxml");
+		var html = csss.xml.Parser.parse(txt).firstElement();
+		var body = html.elementsNamed("body").next();
+		var selector = "#uniq";
+		trace('run body.querySelector("$selector")...');
+		var x = html.querySelector(selector);
+		trace("find: " + x);
+
+		#if js
+		js.Lib.global.qq = function(str: String) {
+			trace('run body.querySelector("$str")...');
+			var x = body.querySelector(str);
+			var s = "";
+			for (k in x.attributes()) {
+				if (k.charCodeAt(0) != ":".code)
+					s += ' $k="${x.get(k)}"';
+			}
+			trace("<"+ x.nodeName + s + ">");
+		}
+
+		js.Lib.global.qa = function(str: String) {
+			trace('run body.querySelectorAll("$str")...');
+			var a = body.querySelectorAll(str);
+			for (x in a) {
+				var s = "";
+				for (k in x.attributes()) {
+					if (k.charCodeAt(0) != ":".code)
+						s += ' $k="${x.get(k)}"';
+				}
+				trace("<"+ x.nodeName + s + ">");
+			}
+		}
+		#end
+	}
+
 	macro static function t2() {
 		var myxml = "bin/index.html";
 		var file = sys.io.File.getContent(myxml);
@@ -85,11 +121,12 @@ class Test {
 		var html = Parser.parse(file, false).firstElement();
 
 		var body = html.elementsNamed("body").next();
-		var bclasses = body.get("class");
-		if (bclasses.value != "xxx") {
+		var bclass = body.get("class");
+		if (bclass != "xxx") {
+			var p = body.attrPos("class");
 			var pos = haxe.macro.PositionTools.make({
-				min: bclasses.pos,
-				max: bclasses.pos + bclasses.value.length,
+				min: p,
+				max: p + bclass.length,
 				file: myxml}
 			);
 			haxe.macro.Context.error("click this message to location where the error occurred.", pos);
