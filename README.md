@@ -9,6 +9,8 @@ CSS-Selector With a Modified Xml Parser
 
 * Not based on RegExp
 
+* No Dependencies
+
 * `querySelector/one` and `querySelectorAll/all` see [Query.hx](csss/Query.hx?ts=4)
 
   ```
