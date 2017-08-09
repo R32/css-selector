@@ -189,7 +189,7 @@ class Parser
 					if (c == '<'.code)
 					{
 						buf.addSub(str, start, p - start);
-						var child = Xml.createPCData({value: buf.toString(), pos: start});
+						var child = Xml.createPCData(buf.toString(), start);
 						buf = new StringBuf();
 						addChild(child);
 						state = S.IGNORE_SPACES;
@@ -203,7 +203,7 @@ class Parser
 				case S.CDATA:
 					if (c == ']'.code && str.fastCodeAt(p + 1) == ']'.code && str.fastCodeAt(p + 2) == '>'.code)
 					{
-						var child = Xml.createCData({value: str.substr(start, p - start), pos: start});
+						var child = Xml.createCData(str.substr(start, p - start), start);
 						addChild(child);
 						p += 2;
 						state = S.BEGIN;
@@ -256,7 +256,7 @@ class Parser
 					{
 						if( p == start )
 							throw new XmlParserException("Expected node name", str, p);
-						xml = Xml.createElement({value: str.substr(start, p - start).toUpperCase(), pos: start});
+						xml = Xml.createElement(str.substr(start, p - start).toUpperCase(), start);
 						addChild(xml);
 						state = S.IGNORE_SPACES;
 						next = S.BODY;
@@ -268,7 +268,7 @@ class Parser
 						case '/'.code:
 							state = S.WAIT_END;
 						case '>'.code:
-							if (is_empty_elem(xml.nodeName.value)) // empty-element tag
+							if (is_empty_elem(xml.nodeName)) // empty-element tag
 								state = S.BEGIN;
 							else
 								state = S.CHILDS;
@@ -325,7 +325,8 @@ class Parser
 							buf.addSub(str, start, p - start);
 							var val = buf.toString();
 							buf = new StringBuf();
-							xml.set(aname, {value: val, pos: start});
+							xml.set(aname, val);
+							xml.set(":" + aname, start + "");
 							state = S.IGNORE_SPACES;
 							next = S.BODY;
 					}
@@ -346,7 +347,7 @@ class Parser
 					{
 						case '>'.code:
 							if( nsubs == 0 )
-								parent.addChild(Xml.createPCData({value: "", pos: p + 1}));
+								parent.addChild(Xml.createPCData("", p + 1));
 							return p;
 						default :
 							throw new XmlParserException("Expected >", str, p);
@@ -358,7 +359,7 @@ class Parser
 							throw new XmlParserException("Expected node name", str, p);
 
 						var v = str.substr(start,p - start).toUpperCase();
-						if (v != parent.nodeName.value)
+						if (v != parent.nodeName)
 							throw new XmlParserException("Expected </" +parent.nodeName + ">", str, p);
 
 						state = S.IGNORE_SPACES;
@@ -368,7 +369,7 @@ class Parser
 				case S.COMMENT:
 					if (c == '-'.code && str.fastCodeAt(p +1) == '-'.code && str.fastCodeAt(p + 2) == '>'.code)
 					{
-						addChild(Xml.createComment({value: str.substr(start, p - start), pos: start}));
+						addChild(Xml.createComment(str.substr(start, p - start), start));
 						p += 2;
 						state = S.BEGIN;
 					}
@@ -379,7 +380,7 @@ class Parser
 						nbrackets--;
 					else if (c == '>'.code && nbrackets == 0)
 					{
-						addChild(Xml.createDocType({value: str.substr(start, p - start), pos: start}));
+						addChild(Xml.createDocType(str.substr(start, p - start), start));
 						state = S.BEGIN;
 					}
 				case S.HEADER:
@@ -387,7 +388,7 @@ class Parser
 					{
 						p++;
 						var str = str.substr(start + 1, p - start - 2);
-						addChild(Xml.createProcessingInstruction({value: str, pos: start}));
+						addChild(Xml.createProcessingInstruction(str, start));
 						state = S.BEGIN;
 					}
 				case S.ESCAPE:
@@ -450,7 +451,7 @@ class Parser
 		{
 			if (p != start || nsubs == 0) {
 				buf.addSub(str, start, p-start);
-				addChild(Xml.createPCData({value: buf.toString(), pos: start}));
+				addChild(Xml.createPCData(buf.toString(), start));
 			}
 			return p;
 		}
@@ -458,7 +459,7 @@ class Parser
 		if( !strict && state == S.ESCAPE && escapeNext == S.PCDATA ) {
 			buf.addChar("&".code);
 			buf.addSub(str, start, p - start);
-			addChild(Xml.createPCData({value: buf.toString(), pos: start}));
+			addChild(Xml.createPCData(buf.toString(), start));
 			return p;
 		}
 

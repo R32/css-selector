@@ -28,38 +28,6 @@ package csss.xml;
 
 #if NO_POS
 typedef Xml = std.Xml;
-
-// fake
-abstract PString(String) to String from String {
-	public inline function new(s: String) this = s;
-
-	public var value(get, set): String;
-	inline function get_value(): String return this;
-	inline function set_value(s: String): String return this = s;
-
-	public var pos(get, set): Int;
-	inline function get_pos(): Int return 0;
-	inline function set_pos(s: Int): Int return 0;
-
-	public inline function toString(): String return this;
-
-	public inline static function eq(ps: PString, val: String): Bool {
-		return ps != null && ps != "" && ps == val;
-	}
-
-	public inline static function attr(xml: Xml, name): String {
-		return xml.get(name);
-	}
-
-	public inline static function name(xml: Xml): String {
-		return xml.nodeName;
-	}
-
-	public inline static function text(xml: Xml): String {
-		return xml.nodeValue;
-	}
-}
-
 #else
 // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType
 @:enum abstract XmlType(Int) to Int {
@@ -77,31 +45,33 @@ abstract PString(String) to String from String {
 class Xml {
 
 	public var nodeType(default, null): XmlType;
-	public var nodeName(default, null): PString;
-	public var nodeValue(default, null): PString;
+	public var nodeName(default, null): String;
+	public var nodeValue(default, null): String;
 	public var parent(default, null): Xml;
 
 	var children: Array<Xml>;
-	var attributeMap: Dict<PString>;
+	var attributeMap: Dict<String>;
 
 	public function new(nodeType) {
 		this.nodeType = nodeType;
-		children = [];
-		attributeMap = new Dict();
+		if (nodeType == Element || nodeType == Document)
+			children = [];
+		if (nodeType == Element)
+			attributeMap = new Dict();
 	}
 
 	public function toString() {
 		return csss.xml.Printer.print(this);
 	}
 
-	public function get( att : String ) : PString {
+	public function get( att : String ) : String {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
 		return attributeMap.get(att);
 	}
 
-	public function set( att : String, value : PString ) : Void {
+	public function set( att : String, value : String ) : Void {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
@@ -146,7 +116,7 @@ class Xml {
 
 	public function elementsNamed( name : String ) : Iterator<Xml> {
 		ensureElementType();
-		var ret = [for (child in children) if (child.nodeType == Element && child.nodeName.value == name.toUpperCase()) child];
+		var ret = [for (child in children) if (child.nodeType == Element && child.nodeName == name.toUpperCase()) child];
 		return ret.iterator();
 	}
 
@@ -199,37 +169,41 @@ class Xml {
 	}
 
 	// Note: Use UpperCase for name.
-	static public function createElement( name : PString ) : Xml {
+	static public function createElement( name : String, pos: Int ) : Xml {
 		var xml = new Xml(Element);
 		xml.nodeName = name;
+		xml.set(":nodeName", "" + pos);
 		return xml;
 	}
 
-	static public function createPCData( data : PString ) : Xml {
+	static public function createPCData( data : String, pos: Int ) : Xml {
 		var xml = new Xml(PCData);
 		xml.nodeValue = data;
+		xml.nodeName = "#TEXT:" + pos;
 		return xml;
 	}
 
-	static public function createCData( data : PString ) : Xml {
+	static public function createCData( data : String, pos: Int ) : Xml {
 		var xml = new Xml(CData);
 		xml.nodeValue = data;
+		xml.nodeName = "#CDATA:" + pos;
 		return xml;
 	}
 
-	static public function createComment( data : PString ) : Xml {
+	static public function createComment( data : String, pos: Int ) : Xml {
 		var xml = new Xml(Comment);
 		xml.nodeValue = data;
+		xml.nodeName = "#COMMENT:" + pos;
 		return xml;
 	}
 
-	static public function createDocType( data : PString ) : Xml {
+	static public function createDocType( data : String, pos: Int ) : Xml {
 		var xml = new Xml(DocType);
 		xml.nodeValue = data;
 		return xml;
 	}
 
-	static public function createProcessingInstruction( data : PString ) : Xml {
+	static public function createProcessingInstruction( data : String, pos: Int ) : Xml {
 		var xml = new Xml(ProcessingInstruction);
 		xml.nodeValue = data;
 		return xml;
@@ -239,36 +213,4 @@ class Xml {
 		return new Xml(Document);
 	}
 }
-
-@:structInit class PString {
-	public var pos(default, null): Int;
-	public var value(default, null): String;
-	public function new(value, pos) {
-		this.value = value;
-		this.pos = pos;
-	}
-	public inline function toString(): String {
-		return this.value;
-	}
-
-	public inline static function eq(ps: PString, val: String): Bool {
-		return ps != null && val != "" && ps.value == val;
-	}
-
-	public inline static function attr(xml: Xml, name): String {
-		var p = xml.get(name);
-		return p == null ? null : p.value;
-	}
-
-	public inline static function name(xml: Xml): String {
-		var p = xml.nodeName;
-		return p == null ? null : p.value;
-	}
-
-	public inline static function text(xml: Xml): String {
-		var p = xml.nodeValue;
-		return p == null ? null : p.value;
-	}
-}
-
 #end

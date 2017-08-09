@@ -56,11 +56,11 @@ class Printer {
 		switch (value.nodeType) {
 			case CData:
 				write(tabs + "<![CDATA[");
-				write(StringTools.trim(value.nodeValue.value));
+				write(StringTools.trim(value.nodeValue));
 				write("]]>");
 				newline();
 			case Comment:
-				var commentContent:String = value.nodeValue.value;
+				var commentContent:String = value.nodeValue;
 				commentContent = ~/[\n\r\t]+/g.replace(commentContent, "");
 				commentContent = "<!--" + commentContent + "-->";
 				write(tabs);
@@ -72,10 +72,11 @@ class Printer {
 				}
 			case Element:
 				write(tabs + "<");
-				write(value.nodeName.value.toLowerCase());
+				write(value.nodeName.toLowerCase());
 				for (attribute in value.attributes()) {
+					if (StringTools.fastCodeAt(attribute, 0) == ":".code) continue; // pos
 					write(" " + attribute + "=\"");
-					write(StringTools.htmlEscape(value.get(attribute).value, true));
+					write(StringTools.htmlEscape(value.get(attribute), true));
 					write("\"");
 				}
 				if (hasChildren(value)) {
@@ -85,7 +86,7 @@ class Printer {
 						writeNode(child, pretty ? tabs + "\t" : tabs);
 					}
 					write(tabs + "</");
-					write(value.nodeName.value.toLowerCase());
+					write(value.nodeName.toLowerCase());
 					write(">");
 					newline();
 				} else {
@@ -93,16 +94,16 @@ class Printer {
 					newline();
 				}
 			case PCData:
-				var nodeValue:String = value.nodeValue.value;
+				var nodeValue:String = value.nodeValue;
 				if (nodeValue.length != 0) {
 					write(tabs + StringTools.htmlEscape(nodeValue));
 					newline();
 				}
 			case ProcessingInstruction:
-				write("<?" + value.nodeValue.value + "?>");
+				write("<?" + value.nodeValue + "?>");
 				newline();
 			case DocType:
-				write("<!DOCTYPE " + value.nodeValue.value + ">");
+				write("<!DOCTYPE " + value.nodeValue + ">");
 				newline();
 		}
 	}
@@ -123,7 +124,7 @@ class Printer {
 				case Element, PCData:
 					return true;
 				case CData, Comment:
-					if (StringTools.ltrim(child.nodeValue.value).length != 0) {
+					if (StringTools.ltrim(child.nodeValue).length != 0) {
 						return true;
 					}
 				case _:
