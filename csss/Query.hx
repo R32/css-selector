@@ -144,6 +144,7 @@ class Query {
 		var prev: State;
 		var ret = null;
 		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
+		var succeed: Bool;
 		inline function saveState() {prev = state; state = None;}
 		inline function resState() { state = prev; }
 
@@ -151,11 +152,12 @@ class Query {
 			xml = children[i];
 			if (xml.nodeType == Element) {
 
-				if (applyFilters(xml, fs, j) && ctype == None) {
-					return xml;
-				}
+				succeed = applyFilters(xml, fs, j);
+
+				if (succeed && ctype == None) return xml;
+
 				// state could be None, BreakCurrent, NoNeed(e.g.:finded ID) when succeed
-				if (ctype == Space || ctype == Child) {
+				if (succeed && (ctype == Space || ctype == Child)) {
 					saveState();
 					if (ctype == Space) {  // E   F
 						ret = search(xml.children, 0, xml.children.length, 0, sel.sub, true);
@@ -175,7 +177,7 @@ class Query {
 					resState();
 				}
 
-				if (ctype == Adjoin || ctype == Sibling) {
+				if (succeed && (ctype == Adjoin || ctype == Sibling)) {
 					saveState();
 					if (ctype == Adjoin) { // E + F
 						i = elemNext(children, i + 1, max);
@@ -209,6 +211,7 @@ class Query {
 		var xml: Xml;
 		var prev: State;
 		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
+		var succeed: Bool;
 		inline function saveState() {prev = state; state = None;}
 		inline function resState() {state = prev;}
 
@@ -216,11 +219,11 @@ class Query {
 			xml = children[i];
 			if (xml.nodeType == Element) {
 
-				if (applyFilters(xml, fs, j) && ctype == None) {
-					out.push(xml);
-				}
+				succeed = applyFilters(xml, fs, j);
 
-				if (ctype == Space || ctype == Child) {
+				if (succeed && ctype == None) out.push(xml);
+
+				if (succeed && (ctype == Space || ctype == Child)) {
 					saveState();
 					if (ctype == Space) {  // E   F
 						searchAll(out, xml.children, 0, xml.children.length, 0, sel.sub, true);
@@ -238,7 +241,7 @@ class Query {
 					resState();
 				}
 
-				if (ctype == Adjoin || ctype == Sibling) {
+				if (succeed && (ctype == Adjoin || ctype == Sibling)) {
 					saveState();
 					if (ctype == Adjoin) { // E + F
 						i = elemNext(children, i + 1, max);
