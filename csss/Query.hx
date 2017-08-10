@@ -143,7 +143,7 @@ class Query {
 		var xml: Xml;
 		var prev: State;
 		var ret = null;
-		var ctype: ChildType;
+		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
 		inline function saveState() {prev = state; state = None;}
 		inline function resState() { state = prev; }
 
@@ -151,13 +151,9 @@ class Query {
 			xml = children[i];
 			if (xml.nodeType == Element) {
 
-				if (applyFilters(xml, fs, j)) {
-					if (sel.sub == null) return xml;
-					ctype = sel.sub.ctype;
-				} else {
-					ctype = None;
+				if (applyFilters(xml, fs, j) && ctype == None) {
+					return xml;
 				}
-
 				// state could be None, BreakCurrent, NoNeed(e.g.:finded ID) when succeed
 				if (ctype == Space || ctype == Child) {
 					saveState();
@@ -184,11 +180,11 @@ class Query {
 					if (ctype == Adjoin) { // E + F
 						i = elemNext(children, i + 1, max);
 						if (i == -1) break;
-						ret = search(children, i , i + 1, j, sel.sub, false);
+						ret = search(children, i , i + 1, j + 1, sel.sub, false);
 						-- i;
 					} else {               // E ~ F
 						// TODO: 需要重写 Sibling 的查找. 因为很可能有其它的子元素会被优先匹配到。
-						ret = search(children, i + 1, max, j, sel.sub, false);
+						ret = search(children, i + 1, max, j + 1, sel.sub, false);
 					}
 					if (ret != null) return ret;
 					if (state == Invalid) break;
@@ -212,7 +208,7 @@ class Query {
 
 		var xml: Xml;
 		var prev: State;
-		var ctype: ChildType;
+		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
 		inline function saveState() {prev = state; state = None;}
 		inline function resState() {state = prev;}
 
@@ -220,16 +216,8 @@ class Query {
 			xml = children[i];
 			if (xml.nodeType == Element) {
 
-				if (applyFilters(xml, fs, j)) {
-					if (sel.sub == null) {
-						out.push(xml);
-						++ i;
-						++ j;
-						continue;
-					}
-					ctype = sel.sub.ctype;
-				} else {
-					ctype = None;
+				if (applyFilters(xml, fs, j) && ctype == None) {
+					out.push(xml);
 				}
 
 				if (ctype == Space || ctype == Child) {
@@ -255,11 +243,11 @@ class Query {
 					if (ctype == Adjoin) { // E + F
 						i = elemNext(children, i + 1, max);
 						if (i == -1) break;
-						searchAll(out, children, i , i + 1, j, sel.sub, false);
+						searchAll(out, children, i , i + 1, j + 1, sel.sub, false);
 						-- i;
 					} else {               // E ~ F
-						// TODO: 需要重写 Sibling 的查找. 因为很可能有其它的子元素会被优先匹配到。
-						searchAll(out, children, i + 1, max, j, sel.sub, false);
+						// TODO: 需要重写 Sibling 的查找. 因为在 all 模式下, 会导致重复的匹配。
+						searchAll(out, children, i + 1, max, j + 1, sel.sub, false);
 					}
 					if (state == Invalid) break;
 					resState();
