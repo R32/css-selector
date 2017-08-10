@@ -220,13 +220,15 @@ class Selector {
 					 "~".code:
 					var rel = ChildType.ofInt(c);
 					pos = ignore_space(str, pos + 1, max);
-					c = char(pos);
-					if (c == ">".code || c == "+".code || c == "~".code) {
-						pos = ignore_space(str, pos + 1, max);
-						rel = ChildType.ofInt(c);
+					if (pos < max) {
+						c = char(pos);
+						if (c == ">".code || c == "+".code || c == "~".code) {
+							pos = ignore_space(str, pos + 1, max);
+							rel = ChildType.ofInt(c);
+						}
+						cur.sub = new Selector(rel);
+						doParse(str, pos, max, cur.sub, list);
 					}
-					cur.sub = new Selector(rel);
-					doParse(str, pos, max, cur.sub, list);
 					return;
 				default:
 				}
