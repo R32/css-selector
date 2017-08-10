@@ -1,8 +1,6 @@
 CSS Selector
 --------
 
-**Works In Progress**
-
 CSS-Selector With a Modified Xml Parser
 
 * Provide extra position info that can be used to locate invalid value/attr(optional)
@@ -17,11 +15,11 @@ CSS-Selector With a Modified Xml Parser
   E :   supported
   E F : supported
   E > F : supported
-  E + F : supported
-  E ~ F : supported  Note: unresolved issue..
+  E + F : supported  Note:
+  E ~ F : supported  Note:
   ```
 
-  supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L535-L550)
+  supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L536-L552)
 
 example:
 
@@ -74,3 +72,14 @@ class Main {
 Note: If you added `-D NO_POS` then the `Query` will use the standard XML of haxe.(no longer provide position info.)
 
 
+### Issues
+
+* [Insolvable] Do not suport escaped single/double quotes.
+
+  e.g: `a[title="hi \"name\"."]` will get a unexpected value.
+
+* Do not suport **two** consecutive `+` and `~`. see [Query TODO](csss/Query.hx?ts=4#L233)
+
+  Did not work: `"li + li + li"`, `"li ~ li ~ li"`, `"li + li ~ li"`, `"li ~ li + li"`
+
+  works: `"li + li > li"`, `"li + li  li"`, `"li li + li"`, `"li > li > li"`
