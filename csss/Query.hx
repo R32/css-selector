@@ -141,53 +141,53 @@ class Query {
 		}
 
 		var xml: Xml;
-		var prev: State;
 		var ret = null;
-		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
 		var succeed: Bool;
-		inline function saveState() {prev = state; state = None;}
+		var sib: Bool = false; // Sibling
+		var adj: Bool = false; // Adjoin
+
+		var prev: State;
+		inline function saveState() { prev = state; state = None; }
 		inline function resState() { state = prev; }
+
+		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
+		inline function not_sub_selector() { return ctype == None; }
+		inline function has_sub_selector() { return ctype != None; }
 
 		while (i < max) {
 			xml = children[i];
 			if (xml.nodeType == Element) {
-
 				succeed = applyFilters(xml, fs, j);
 
-				if (succeed && ctype == None) return xml;
-
-				// state could be None, BreakCurrent, NoNeed(e.g.:finded ID) when succeed
-				if (succeed && (ctype == Space || ctype == Child)) {
+				if (succeed && not_sub_selector())
+					return xml;
+				else if (sib || adj) {
 					saveState();
-					if (ctype == Space) {  // E   F
-						ret = search(xml.children, 0, xml.children.length, 0, sel.sub, true);
-					} else {               // E > F
-						ret = search(xml.children, 0, xml.children.length, 0, sel.sub, false);
-					}
+					ret = search(children, i, i + 1, j, sel.sub, false); // TODO: i + 1
 					if (ret != null) return ret;
 					if (state == Invalid) break;
 					resState();
+				}
+
+				adj = false;
+				if (succeed && has_sub_selector()) {
+					if (ctype == Space || ctype == Child) {
+						saveState();
+						// ctype == Space ? (E   F)  :  (E > F)
+						ret = search(xml.children, 0, xml.children.length, 0, sel.sub, ctype == Space);
+						if (ret != null) return ret;
+						if (state == Invalid) break;
+						resState();
+					} else if (ctype == Adjoin) {
+						adj = true;  // (E + F)
+					} else if (!sib) {
+						sib = true;  // (E ~ F)
+					}
 				}
 
 				if (rec && state != Invalid) { // recursive
 					saveState();
 					ret = search(xml.children, 0, xml.children.length, 0, sel, true);
-					if (ret != null) return ret;
-					if (state == Invalid) break;
-					resState();
-				}
-
-				if (succeed && (ctype == Adjoin || ctype == Sibling)) {
-					saveState();
-					if (ctype == Adjoin) { // E + F
-						i = elemNext(children, i + 1, max);
-						if (i == -1) break;
-						ret = search(children, i , i + 1, j + 1, sel.sub, false);
-						-- i;
-					} else {               // E ~ F
-						// TODO: 需要重写 Sibling 的查找. 因为很可能有其它的子元素会被优先匹配到。
-						ret = search(children, i + 1, max, j + 1, sel.sub, false);
-					}
 					if (ret != null) return ret;
 					if (state == Invalid) break;
 					resState();
@@ -209,49 +209,50 @@ class Query {
 		}
 
 		var xml: Xml;
-		var prev: State;
-		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
 		var succeed: Bool;
-		inline function saveState() {prev = state; state = None;}
-		inline function resState() {state = prev;}
+		var sib: Bool = false; // Sibling
+		var adj: Bool = false; // Adjoin
+
+		var prev: State;
+		inline function saveState() { prev = state; state = None; }
+		inline function resState() { state = prev; }
+
+		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
+		inline function not_sub_selector() { return ctype == None; }
+		inline function has_sub_selector() { return ctype != None; }
 
 		while (i < max) {
 			xml = children[i];
 			if (xml.nodeType == Element) {
-
 				succeed = applyFilters(xml, fs, j);
 
-				if (succeed && ctype == None) out.push(xml);
-
-				if (succeed && (ctype == Space || ctype == Child)) {
+				if (succeed && not_sub_selector()) {
+					out.push(xml);
+				} else if (sib || adj) {
 					saveState();
-					if (ctype == Space) {  // E   F
-						searchAll(out, xml.children, 0, xml.children.length, 0, sel.sub, true);
-					} else {               // E > F
-						searchAll(out, xml.children, 0, xml.children.length, 0, sel.sub, false);
-					}
+					searchAll(out, children, i, i + 1, j, sel.sub, false); // TODO: i + 1
 					if (state == Invalid) break;
 					resState();
 				}
 
-				if (rec && state != Invalid) { // recursive
+				adj = false;
+				if (succeed && has_sub_selector()) {
+					if (ctype == Space || ctype == Child) {
+						saveState();
+						// ctype == Space ? (E   F)  :  (E > F)
+						searchAll(out, xml.children, 0, xml.children.length, 0, sel.sub, ctype == Space);
+						if (state == Invalid) break;
+						resState();
+					} else if (ctype == Adjoin) {
+						adj = true;  // (E + F)
+					} else if (!sib) {
+						sib = true;  // (E ~ F)
+					}
+				}
+
+				if (rec && state != Invalid) {
 					saveState();
 					searchAll(out, xml.children, 0, xml.children.length, 0, sel, true);
-					if (state == Invalid) break;
-					resState();
-				}
-
-				if (succeed && (ctype == Adjoin || ctype == Sibling)) {
-					saveState();
-					if (ctype == Adjoin) { // E + F
-						i = elemNext(children, i + 1, max);
-						if (i == -1) break;
-						searchAll(out, children, i , i + 1, j + 1, sel.sub, false);
-						-- i;
-					} else {               // E ~ F
-						// TODO: 需要重写 Sibling 的查找. 因为在 all 模式下, 会导致重复的匹配。
-						searchAll(out, children, i + 1, max, j + 1, sel.sub, false);
-					}
 					if (state == Invalid) break;
 					resState();
 				}
@@ -260,14 +261,6 @@ class Query {
 			}
 			++ i;
 		}
-	}
-
-	static function elemNext(a: Array<Xml>, i, max):Int {
-		while (i < max) {
-			if (a[i].nodeType == Element) return i;
-			++ i;
-		}
-		return -1;
 	}
 
 	public static inline function querySelector(top: Xml, s: String): Xml {
