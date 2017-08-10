@@ -185,7 +185,7 @@ class Query {
 					}
 				}
 
-				if (rec && state != Invalid) { // recursive
+				if (rec && (state: Int) < (NoNeed: Int)) { // recursive
 					saveState();
 					ret = search(xml.children, 0, xml.children.length, 0, sel, true);
 					if (ret != null) return ret;
@@ -230,7 +230,7 @@ class Query {
 					out.push(xml);
 				} else if (sib || adj) {
 					saveState();
-					searchAll(out, children, i, i + 1, j, sel.sub, false); // TODO: i + 1
+					searchAll(out, children, i, i + 1, j, sel.sub, false); // TODO: looking for anather way instead of i + 1
 					if (state == Invalid) break;
 					resState();
 				}
@@ -250,7 +250,7 @@ class Query {
 					}
 				}
 
-				if (rec && state != Invalid) {
+				if (rec && (state: Int) < (NoNeed: Int)) {
 					saveState();
 					searchAll(out, xml.children, 0, xml.children.length, 0, sel, true);
 					if (state == Invalid) break;
