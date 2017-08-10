@@ -5,11 +5,19 @@ CSS-Selector With a Modified Xml Parser
 
 * Provide extra position info that can be used to locate invalid value/attr(optional)
 
+  Note: Use `-D NO_POS` will be able to disable this feature(then std.Xml will instead of csss.Xml).
+
 * Not based on RegExp
 
 * No Dependencies
 
-* `querySelector/one` and `querySelectorAll/all` see [Query.hx](csss/Query.hx?ts=4)
+* Ease To Use.
+
+  use `.querySelector/one` or `.querySelectorAll/all` to query XML. e.g. `xml.querySelectorAll("a:not([href='#'])")`.
+
+  use `.attrPos` or `.nodePos` to got position of attributes/nodeName/nodeValue.
+
+  supported descendant selector:
 
   ```
   E :   supported
@@ -47,7 +55,7 @@ class Main {
         }
         var attr = body.get("class");
         if (attr != "expected") {
-            var p = body.attrPos("class");
+            var p = body.attrPos("class");                                   // got position of attr
             var pos = haxe.macro.PositionTools.make({
                 min: p,
                 max: p + attr.length,
@@ -69,8 +77,6 @@ class Main {
 }
 ```
 
-Note: If you added `-D NO_POS` then the `Query` will use the standard XML of haxe.(no longer provide position info.)
-
 
 ### Issues
 
@@ -78,8 +84,8 @@ Note: If you added `-D NO_POS` then the `Query` will use the standard XML of hax
 
   e.g: `a[title="hi \"name\"."]` will get a unexpected value.
 
-* Do not suport **two** consecutive `+` and `~`. see [Query TODO](csss/Query.hx?ts=4#L233)
+* Do not suport **two** consecutive `+` or `~`. see [Query TODO](csss/Query.hx?ts=4#L233)
 
-  Did not work: `"li + li + li"`, `"li ~ li ~ li"`, `"li + li ~ li"`, `"li ~ li + li"`
+  Invalid: `"li + li + li"`, `"li ~ li ~ li"`, `"li + li ~ li"`, `"li ~ li + li"`
 
-  works: `"li + li > li"`, `"li + li  li"`, `"li li + li"`, `"li > li > li"`
+  Available: `"li + li > li"`, `"li + li li"`, `"li li + li"`, `"li > li > li"`
