@@ -32,7 +32,6 @@ CSS-Selector With a Modified Xml Parser
 example:
 
 ```haxe
-import csss.xml.Parser;
 import csss.xml.Xml;
 using csss.Query;
 
@@ -44,7 +43,7 @@ class Main {
     macro static function mymacro() {
         var myxml = "bin/index.html";
         var file = sys.io.File.getContent(myxml);
-        var body = Parser.parse(file, false).querySelector("body");
+        var body = Xml.parse(file).querySelector("body");
 
         var x = body.querySelector(".t2 span");                              // equal body.one(".t2 span")
         trace(str(x));

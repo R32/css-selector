@@ -212,5 +212,9 @@ class Xml {
 	static public function createDocument() : Xml {
 		return new Xml(Document);
 	}
+
+	static public function parse( str : String ) : Xml {
+		return csss.xml.Parser.parse(str, false);
+	}
 }
 #end
