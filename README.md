@@ -7,6 +7,8 @@ CSS-Selector With a Modified Xml Parser
 
   Note: Use `-D NO_POS` will be able to disable this feature(then std.Xml will instead of csss.Xml).
 
+  If the position is not accurate. You may need add `-D old-error-format`
+
 * Not based on RegExp
 
 * No Dependencies
@@ -88,3 +90,8 @@ class Main {
   Invalid: `"li + li + li"`, `"li ~ li ~ li"`, `"li + li ~ li"`, `"li ~ li + li"`
 
   Available: `"li + li > li"`, `"li + li li"`, `"li li + li"`, `"li > li > li"`
+
+
+### Changes
+
+* `0.2.2`:   added `Xml.parse` that you no longer need to `import csss.xml.Parse`
