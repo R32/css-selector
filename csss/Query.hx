@@ -272,7 +272,7 @@ class Query {
 		if (top.nodeType != Document && top.nodeType != Element) return ret;
 		var q = new Query();
 		var sa = Selector.parse(s);
-		if (Error.no < 0) return null;
+		if (sa.length == 0) return null;
 		if (sa.length == 1) {
 			return q.search(top.children, 0, top.children.length, 0, sa[0], true);
 		} else {
@@ -305,7 +305,7 @@ class Query {
 		if (top.nodeType != Document && top.nodeType != Element) return ret;
 
 		var sa = Selector.parse(s);
-		if (Error.no < 0) return null;
+		if (sa.length == 0) return ret;
 		var q = new Query();
 		if (sa.length == 1) {
 			q.searchAll(ret, top.children, 0, top.children.length, 0, sa[0], true);

@@ -140,20 +140,19 @@ class Selector {
 
 	/**
 	*
-	* @param s xml string
+	* @param s css selector string
 	* @return
 	*/
 	public static function parse(s: String): Array<Selector> {
-		var list: Array<Selector> = null;
+		var list: Array<Selector> = [];
 		Error.clear();
-		if (s != null && s != "" ) {
-			list = [new Selector(None)];
+		if (s != null && s != "") {
+			list.push(new Selector(None));
 			doParse(s, 0, s.length, list[0], list);
-		} else {
-			Error.set(InvalidSelector, s, 0);
-		}
-		if (Error.no < 0) {
-			trace(Error.str("CSSSelectorParse"));
+			if (Error.no < 0) {
+				list = []; // empty.
+				trace(Error.str("CSSSelectorParse"));
+			}
 		}
 		return list;
 	}
