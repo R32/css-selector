@@ -119,7 +119,7 @@ class CsssTest {
 		#end
 
 	}
-
+	#if js
 	static function t4_path(html: Xml) @:privateAccess {
 		var doc = html.parent;
 		function sub(xml, top, ?pos: haxe.PosInfos) {
@@ -145,6 +145,7 @@ class CsssTest {
 		sub(st3.one(".L2-3-s"), null);
 		sub(html.one("#uniq"), st3);
 	}
+	#end
 
 	macro static function t2() {
 		var myxml = "bin/index.html";
