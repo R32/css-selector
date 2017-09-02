@@ -9,66 +9,72 @@ using csss.Query;
 
 class CsssTest {
 
-	static function union(a: Array<Int>, b: Array<Int>): String {
-		var x = NM.union(new NM(a[0], a[1]), new NM(b[0], b[1]));
-		return '(${a[0]}n+${a[1]}) U (${b[0]}n+${b[1]}) = ' + (x == null ? null : x.toString());
+	static function arrayEq<T>(a: Array<T>, b: Array<T>): Bool {
+		if (a == b) return true;
+		var len = a.length;
+		if (len != b.length) return false;
+		var i = 0;
+		while (i < len) {
+			if (a[i] != b[i]) return false;
+			++ i;
+		}
+		return true;
 	}
 
 	static function t3() {
-		trace(union([2, 6], [4, 2]));
-		trace(union([3, 5], [3, 3]));
-		trace(union([2, 3], [3, 2]));
-		trace(union([2, 329], [3, 22]));
-		trace(union([7, 9], [15, 22]));
-		var n1 = new csss.NM( -2, 10); var n1c = PNM.ofNM(n1);
-		var n2 = new csss.NM( -3, 10); var n2c = PNM.ofNM(n2);
-		trace("nth-child(" + n1.toString() + ") => nth-child(" + n1c + ")["+ n1c.max +"]");
-		trace("nth-child(" + n2.toString() + ") => nth-child(" + n2c + ")["+ n2c.max +"]");
-		bLog("nth-child", n1); bLog("nth-child", n1c);
-		bLog("nth-child", n2); bLog("nth-child", n2c);
+		trace("------ t3 ------");
+		function union(a: Array<Int>, b: Array<Int>) {
+			var x = NM.union(new NM(a[0], a[1]), new NM(b[0], b[1]));
+			trace('(${a[0]}n+${a[1]}) U (${b[0]}n+${b[1]}) = ' + (x == null ? null : x.toString()));
+		}
+		union([2, 6], [4, 2]);
+		union([3, 5], [3, 3]);
+		union([2, 3], [3, 2]);
+		union([2, 329], [3, 22]);
+		union([7, 9], [15, 22]);
 
-
-		var l1 = new NM(2, 1); var l1c = PNM.ofLastNM(l1, 10);
-		var l2 = new NM(3, 2); var l2c = PNM.ofLastNM(l2, 10);
-		trace("nth-last-child(" + l1.toString() + ") => nth-child(" + l1c + ")["+ l1c.max +"]");
-		trace("nth-last-child(" + l2.toString() + ") => nth-child(" + l2c + ")["+ l2c.max +"]");
-		bLog("nth-last-child", l1); bLog("nth-child", l1c);
-		bLog("nth-last-child", l2); bLog("nth-child", l2c);
-
-		var ln1 = new NM(-2, 6); var ln1c = PNM.ofLastNM(ln1, 10);
-		var ln2 = new NM(-3, 5); var ln2c = PNM.ofLastNM(ln2, 10);
-		trace("nth-last-child(" + ln1.toString() + ") => nth-child(" + ln1c + ")["+ ln1c.max +"]");
-		trace("nth-last-child(" + ln2.toString() + ") => nth-child(" + ln2c + ")[" + ln2c.max +"]");
-		bLog("nth-last-child", ln1); bLog("nth-child", ln1c);
-		bLog("nth-last-child", ln2); bLog("nth-child", ln2c);
-	}
-
-	static function bLog(nths, nthc) {
-	#if js
-		js.Browser.console.log(
-			'$nths(${nthc.toString()}): \t',
-			js.Browser.document.querySelectorAll("div.selector-test p:" + nths + "(" + nthc +")")
-		);
-	#end
+		function convert(a, max, last, ?pos: haxe.PosInfos) {
+			var nm = new NM(a[0], a[1]);
+			var pnm = max > 0 ? PNM.ofLastNM(nm, max) : PNM.ofNM(nm);
+			var sa = last ? "nth-last-child" : "nth-child";
+			trace('$sa(${ nm.toString() }) => nth-child(${ pnm.toString() })[${pnm.max}]');
+		#if js
+			if (untyped __js__("'textContent' in document.documentElement")) { // simeple IE8 detection
+				var r0 = js.Browser.document.querySelectorAll('div.selector-test p:$sa(${ nm.toString() })');
+				var r1 = js.Browser.document.querySelectorAll('div.selector-test p:nth-child(${ pnm.toString() })');
+				//js.Browser.console.log('$sa(${nm.toString()}): \t', r0);
+				//js.Browser.console.log('nth-child(${pnm.toString()}): \t', r1);
+				if (!arrayEq(cast r0, cast r1)) js.Browser.console.error('Error Line: ${pos.lineNumber}');
+			}
+		#end
+		}
+		var max = 10; // document.querySelector('div.selector-test').children.length;
+		convert([-2, max], 0, false);
+		convert([-3, max], 0, false);
+		convert([ 2, 1], max, true);
+		convert([ 3, 2], max, true);
+		convert([-2, 6], max, true);
+		convert([-3, 5], max, true);
 	}
 
 	static function main() {
-		//t1();
+		t1();
 		//t2();
-		//t3();
+		t3();
 		t4();
 	}
 	static function t1() {
+		trace("------ t1 ------");
 		var a = [
 			"a li#uniq.btn.btn-primary[title][name^=hello]:empty",
 			"a span, a li:not(:first-child) > span[title]:",
 			"a.btn:nth-child( -201 )",
 			":nth-child(-n+01)",
-			":nth-child(-0n+20)", //
-			":nth-child(+0n+003)", //
-			":nth-last-child(0n - 40)",
-			":nth-last-child(+210n + 50)",
-			":nth-last-child(n)",
+			":nth-child(-0n+20)",
+			":nth-child(+0n+003)",
+			//":nth-last-child(0n - 40)",
+			//":nth-last-child(+210n + 50)",
+			//":nth-last-child(n)",
 		];
 		for (sel in a) {
 			var list = Selector.parse(sel);
@@ -79,6 +85,7 @@ class CsssTest {
 	}
 
 	static function t4() @:privateAccess {
+		trace("------ t4 ------");
 		var txt = haxe.Resource.getString("myxml");
 		var html = csss.xml.Parser.parse(txt).firstElement();
 		var body = html.elementsNamed("body").next();
@@ -94,12 +101,7 @@ class CsssTest {
 			if (x == null) {
 				trace(x);
 			} else {
-				var s = "";
-				for (k in x.attributes()) {
-					if (k.charCodeAt(0) != ":".code)
-						s += ' $k="${x.get(k)}"';
-				}
-				trace("<" + x.nodeName + s + ">");
+				trace(x.toSimpleString());
 			}
 		}
 
@@ -107,20 +109,10 @@ class CsssTest {
 			trace('run body.querySelectorAll("$str")...');
 			var a = body.querySelectorAll(str);
 			for (x in a) {
-				var s = "";
-				for (k in x.attributes()) {
-					if (k.charCodeAt(0) != ":".code)
-						s += ' $k="${x.get(k)}"';
-				}
-				trace("<"+ x.nodeName + s + ">");
+				trace(x.toSimpleString());
 			}
 		}
-		t4_path(html);
-		#end
 
-	}
-	#if js
-	static function t4_path(html: Xml) @:privateAccess {
 		var doc = html.parent;
 		function sub(xml, top, ?pos: haxe.PosInfos) {
 			var p = csss.Path.ofXml(xml, top);
@@ -144,8 +136,8 @@ class CsssTest {
 		sub(st3.one(".L2-3-s"), st3);
 		sub(st3.one(".L2-3-s"), null);
 		sub(html.one("#uniq"), st3);
+		#end
 	}
-	#end
 
 	macro static function t2() {
 		var myxml = "bin/index.html";
