@@ -370,11 +370,24 @@ class Query {
 
 	public static function ownerDocument(xml: Xml): Xml {
 		var ret = xml.parent;
-		if (ret == null) return null;
 		while (ret != null) {
 			if (ret.nodeType == Document) break;
 			ret = ret.parent;
 		}
 		return ret;
+	}
+
+	public static function toSimpleString(xml: Xml): String {
+		var id = xml.get("id");
+		var cls = xml.get("class");
+		if (id == null)
+			id = "";
+		else
+			id = "#" + id;
+		if (cls == null)
+			cls = "";
+		else
+			cls = "." + cls.split(" ").join("."); //
+		return '<${xml.nodeName}$id$cls>';
 	}
 }
