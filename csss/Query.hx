@@ -378,16 +378,20 @@ class Query {
 	}
 
 	public static function toSimpleString(xml: Xml): String {
-		var id = xml.get("id");
-		var cls = xml.get("class");
-		if (id == null)
-			id = "";
-		else
-			id = "#" + id;
-		if (cls == null)
-			cls = "";
-		else
-			cls = "." + cls.split(" ").join("."); //
-		return '<${xml.nodeName}$id$cls>';
+		if (xml.nodeType == Element) {
+			var id = xml.get("id");
+			var cls = xml.get("class");
+			if (id == null)
+				id = "";
+			else
+				id = "#" + id;
+			if (cls == null)
+				cls = "";
+			else
+				cls = "." + cls.split(" ").join("."); //
+			return '<${xml.nodeName}$id$cls>';
+		} else {
+			return xml.toString();
+		}
 	}
 }
