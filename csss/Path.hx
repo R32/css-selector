@@ -34,27 +34,22 @@ class PTools {
 		return a.length - b.length;
 	}
 
-	// 相对于 #document 的位置.
+	// relative to the #document when top == null
 	static function getPath(xml: Xml, top: Xml): Path {
 		var ret = new Path();
-		var i: Int, len: Int, col: Array<Xml>;
-		var pa = xml.parent;
-		while (pa != null) {
-			i = 0;
-			col = @:privateAccess pa.children;
-			len = col.length;
-			while (i < len) {
-				if (col[i] == xml) {
-					ret.push(i);
-					break;
+		while (xml != null && xml != top) {
+			if (xml.parent != null) {
+				var i = 0;
+				var col = @:privateAccess xml.parent.children;
+				var len = col.length;
+				while (i < len) {
+					if (col[i] == xml) ret.push(i);
+					++ i;
 				}
-				++ i;
 			}
-			if (top != null && pa == top) break;
-			xml = pa;
-			pa = pa.parent;
+			xml = xml.parent;
 		}
-		if (top == null || xml.parent == top)
+		if (xml == top)
 			@:privateAccess ret.reverse();
 		else
 			ret = null;

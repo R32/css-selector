@@ -7,7 +7,7 @@ import csss.NM;
 import csss.Path;
 using csss.Query;
 
-class Test {
+class CsssTest {
 
 	static function union(a: Array<Int>, b: Array<Int>): String {
 		var x = NM.union(new NM(a[0], a[1]), new NM(b[0], b[1]));
@@ -115,7 +115,35 @@ class Test {
 				trace("<"+ x.nodeName + s + ">");
 			}
 		}
+		t4_path(html);
 		#end
+
+	}
+
+	static function t4_path(html: Xml) @:privateAccess {
+		var doc = html.parent;
+		function sub(xml, top, ?pos: haxe.PosInfos) {
+			var p = csss.Path.ofXml(xml, top);
+			if (top == null) top = doc;
+			if (p == null) {
+				if (xml == top || top.contains(xml))
+					js.Browser.console.error('Error Line: ${pos.lineNumber}');
+				else
+					js.Browser.console.log('Passed Line : ${pos.lineNumber}');
+			} else {
+				js.Browser.console.log("Found in [" + p.join(",") + "] " + (p.toXml(top) == xml));
+			}
+		}
+		sub(html, null);
+		sub(html, html);
+		var st3 = html.one("#t3");
+		sub(st3, html);
+		sub(st3, null);
+		sub(st3.one(".l2-3"), st3);
+		sub(st3.one(".l2-3"), null);
+		sub(st3.one(".L2-3-s"), st3);
+		sub(st3.one(".L2-3-s"), null);
+		sub(html.one("#uniq"), st3);
 	}
 
 	macro static function t2() {

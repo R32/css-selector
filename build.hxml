@@ -1,6 +1,17 @@
 -dce full
--main test.Test
--D nodejs
+-main test.CsssTest
 -D analyzer-optimize
 -D old-error-format
+-debug
+-resource bin/index.html@myxml
+--each
 -js bin/test.js
+
+#--next
+#-swf bin/test.swf
+
+#--next
+#-hl bin/test.hl
+
+#--next
+#-neko bin/test.n
