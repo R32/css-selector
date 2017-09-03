@@ -39,10 +39,7 @@ class Query {
 			ret = strEq(id, xml.get("id"));
 			if (ret) state = NoNeed;
 		case Cls(c):
-			val = xml.get("class");
-			ret = val != null
-				? c != "" && val.indexOf(c) != -1
-				: false;
+			ret = classVali(val = xml.get("class"), c);
 		case Attr(a):
 			val = xml.get(a.name);
 			if (val == null) return false;
@@ -261,6 +258,32 @@ class Query {
 			}
 			++ i;
 		}
+	}
+
+	static function classVali(s: String, v: String): Bool {
+		if (s == null || s == "") return false;
+		var c: Int;
+		var pos = 0;
+		var left = 0;
+		var max = s.length;
+		while (pos < max) {
+			c = StringTools.fastCodeAt(s, pos);
+			if (c == " ".code) {
+				if (left == pos) {
+					++ left;
+				} else {
+					if (s.substr(left, pos - left) == v) return true;
+					left = pos + 1;
+				}
+			}
+			++ pos;
+		}
+		if (left == 0)
+			return s == v;
+		else if (pos > left)
+			return s.substr(left, pos - left) == v;
+		else
+			return false;
 	}
 
 	public static inline function querySelector(top: Xml, s: String): Xml {

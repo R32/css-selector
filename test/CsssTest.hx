@@ -82,6 +82,18 @@ class CsssTest {
 			var s = [for (c in list) c.toString()].join(", ");
 			trace(s);
 		}
+
+		@:privateAccess { // Query.classVali
+			if (!(
+				   csss.Query.classVali("abc hi", "hi")
+				&& csss.Query.classVali("hi", "hi")
+				&& csss.Query.classVali(" hi ", "hi")
+				&& !csss.Query.classVali("hid", "hi")
+				&& !csss.Query.classVali(".hi", "hi")
+				&& !csss.Query.classVali("", "")
+				&& !csss.Query.classVali("hi", null)
+			)) trace("Query.classVali Error...");
+		}
 	}
 
 	static function t4() @:privateAccess {
