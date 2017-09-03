@@ -47,12 +47,12 @@ class Main {
         var file = sys.io.File.getContent(myxml);
         var body = Xml.parse(file).querySelector("body");
 
-        var x = body.querySelector(".t2 span");                              // equal body.one(".t2 span")
-        trace(str(x));
+        var x = body.querySelector("#t3 > li span");                         // equal body.one("#t3 > li span")
+        trace(x != null ? x.toSimpleString() : x);
 
         var a = body.querySelectorAll(".selector-test > :nth-child(2n+1)");  // equal body.all("...")
         for (x in a) {
-            trace(str(x));
+            trace(x.toSimpleString());
         }
         var attr = body.get("class");
         if (attr != "expected") {
@@ -65,15 +65,6 @@ class Main {
             haxe.macro.Context.error("click this message to location where the error occurred.", pos);
         }
         return macro null;
-    }
-
-    static function str(x: Xml) {
-        var s = "<" + x.nodeName;
-        for (k in x.attributes()) {
-            if (k.charCodeAt(0) != ":".code)
-                s += ' $k="${x.get(k)}"';
-        }
-        return s + ">";
     }
 }
 ```
@@ -94,4 +85,5 @@ class Main {
 
 ### Changes
 
+* `0.3.0`:   fix class validating of Query. [more...](https://github.com/R32/css-selector/compare/176c4c0...472958c)
 * `0.2.2`:   added `Xml.parse` that you no longer need to `import csss.xml.Parse`
