@@ -5,13 +5,9 @@ CSS-Selector With a Modified Xml Parser
 
 * Provide extra position info that can be used to locate invalid value/attr(optional)
 
-  Note: Use `-D NO_POS` will be able to disable this feature(then std.Xml will instead of csss.Xml).
+  > If the position is not accurate(in flashdevelop). You may need add `-D old-error-format`
 
-  If the position is not accurate. You may need add `-D old-error-format`
-
-* Not based on RegExp
-
-* No Dependencies
+* Not based on RegExp, No Dependencies
 
 * Ease To Use.
 
@@ -69,8 +65,15 @@ class Main {
 }
 ```
 
-
 ### Issues
+
+* When iterating Attribute, You should skip the posInfo like:
+
+  ```haxe
+  for (name in xml.attributes()) {
+	if (name.charCodeAt(0) == ":".code) continue;  // skip the pos
+  }
+  ```
 
 * [Insolvable] Do not suport escaped single/double quotes.
 
