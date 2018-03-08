@@ -112,7 +112,7 @@ class Parser
 {
 	static function is_empty_elem(name: String): Bool {
 		// AREA, BASE, BR, COL, EMBED, HR, IMG, INPUT, KEYGEN, LINK, META, PARAM, SOURCE, TRACK, WBR,
-		if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT")
+		if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT" || name == "IMG")
 			return true
 		else
 			return false;
@@ -140,7 +140,7 @@ class Parser
 		return doc;
 	}
 
-	static function doParse(str:String, strict:Bool, p:Int = 0, ?parent:Xml):Int
+	static function doParse(str:String, strict:Bool, p:Int = 0, parent:Xml):Int
 	{
 		var xml:Xml = null;
 		var state = S.BEGIN;
