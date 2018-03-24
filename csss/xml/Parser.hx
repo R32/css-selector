@@ -189,9 +189,11 @@ class Parser
 					if (c == '<'.code)
 					{
 						buf.addSub(str, start, p - start);
-						var child = Xml.createPCData(buf.toString(), start);
+						var value = buf.toString();
+						if (!is_allspace(value, 0, value.length)) { // skip the empty node.
+							addChild(Xml.createPCData(value, start));
+						}
 						buf = new StringBuf();
-						addChild(child);
 						state = S.IGNORE_SPACES;
 						next = S.BEGIN_NODE;
 					} else if (c == '&'.code) {
@@ -468,6 +470,14 @@ class Parser
 
 	static inline function isValidChar(c) {
 		return (c >= 'a'.code && c <= 'z'.code) || (c >= 'A'.code && c <= 'Z'.code) || (c >= '0'.code && c <= '9'.code) || c == ':'.code || c == '.'.code || c == '_'.code || c == '-'.code;
+	}
+
+	static function is_allspace(str: String, pos: Int, right: Int): Bool {
+		while (pos < right) {
+			if (str.fastCodeAt(pos) > " ".code) return false;
+			++ pos;
+		}
+		return true;
 	}
 }
 #end
