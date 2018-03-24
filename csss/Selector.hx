@@ -151,7 +151,6 @@ class Selector {
 			doParse(s, 0, s.length, list[0], list);
 			if (Error.no < 0) {
 				list = []; // empty.
-				trace(Error.str("CSSSelectorParse"));
 			}
 		}
 		return list;
@@ -534,7 +533,7 @@ class Selector {
 		// psuedo classes
 		"root"          :  1,
 		"first-child"   :  2,
-		//"last-child"    :  3,
+		"last-child"    :  3,
 		//"only-child"    :  4,
 		//"first-of-type" :  5,
 		//"last-of-type"  :  6,

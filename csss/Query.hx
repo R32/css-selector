@@ -96,37 +96,42 @@ class Query {
 	}
 
 	function eq_psuedo(xml: Xml, t: PClsType, ei): Bool {
-		return switch (t) {
+		var ret = false;
+		switch (t) {
 		case Root:
 			state = NoNeed;
-			xml.parent != null && xml.parent.nodeType == Document;
+			ret = xml.parent != null && xml.parent.nodeType == Document;
 		case FirstChild:
 			state = BreakCurrent;
-			ei == 0;
+			ret = ei == 0;
 		case LastChild:
-			false; //ei == elen - 1;
-		case OnlyChild:
-			false; //ei == 0 && elen == 1;
-		case FirstOfType:
-			false; //ni == 0;
-		case LastOfType:
-			false;
-		case OnlyOfType:
-			false;
-		case Empty:
-			var b = true;
-			for (child in xml.children) {
-				if (child.nodeType != Comment) {
-					b = false;
+			var sibs = xml.parent.children;
+			var last = sibs.length;
+			while (--last >= ei) {
+				if (sibs[last].nodeType == Element) {
+					if (sibs[last] == xml)
+						ret = true;
 					break;
 				}
 			}
-			b;
+		case OnlyChild:   //ei == 0 && elen == 1;
+		case FirstOfType: //ni == 0;
+		case LastOfType:
+		case OnlyOfType:
+		case Empty:
+			ret = true;
+			for (child in xml.children) {
+				if (child.nodeType != Comment) {
+					ret = false;
+					break;
+				}
+			}
 		case Checked:
-			xml.exists("checked");
+			ret = xml.exists("checked");
 		case Disabled:
-			xml.exists("disabled");
+			ret = xml.exists("disabled");
 		}
+		return ret;
 	}
 
 	function search(children: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Xml {
