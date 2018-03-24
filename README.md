@@ -88,5 +88,9 @@ class Main {
 
 ### Changes
 
+* `0.3.1`:
+  - Added `:last-child` for Querying.
+  - Allow tag `<IMG>` without `/`.
+  - Ignoring all spaces TextNode of Xml
 * `0.3.0`:   fix class validating of Query. [more...](https://github.com/R32/css-selector/compare/176c4c0...472958c)
 * `0.2.2`:   added `Xml.parse` that you no longer need to `import csss.xml.Parse`
