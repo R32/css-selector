@@ -91,6 +91,9 @@ function get(xml: Xml, name: String): String {
 
 ### Changes
 
+* `0.3.2`:
+  - make xml.attributeMap to Array
+  - remove escape and StringBuf from Xml.parse
 * `0.3.1`:
   - Added `:last-child` for Querying.
   - Allow tag `<IMG>` without `/`.
