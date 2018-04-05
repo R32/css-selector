@@ -10,11 +10,7 @@ import csss.Selector;
 	var Invalid = 3;       // No need to find **current and next selector** in xml and xml.children.
 }
 
-#if NO_POS
-@:access(Xml)
-#else
 @:access(csss.xml.Xml)
-#end
 class Query {
 
 	var state: State;
@@ -357,33 +353,6 @@ class Query {
 				}
 			}
 		}
-		return ret;
-	}
-
-	public static function nodePos(xml: Xml): Int {
-		var ret = -1;
-	#if !NO_POS
-		inline function int(s) return @:privateAccess Selector.int(s);
-		switch (xml.nodeType) {
-		case Element:
-			ret = int(xml.get(":nodeName"));
-		case PCData,
-			 CData,
-			 Comment:
-			ret = int(xml.nodeName.split(":")[1]);
-		default:
-		}
-	#end
-		return ret;
-	}
-
-	public static function attrPos(xml: Xml, name: String): Int {
-		var ret = -1;
-	#if !NO_POS
-		inline function int(s) return @:privateAccess Selector.int(s);
-		if (xml.nodeType == Element)
-			ret = int(xml.get(":" + name));
-	#end
 		return ret;
 	}
 

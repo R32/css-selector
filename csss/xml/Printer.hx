@@ -29,9 +29,6 @@ package csss.xml;
 	This class provides utility methods to convert Xml instances to
 	String representation.
 **/
-#if NO_POS
-typedef Printer = haxe.xml.Printer;
-#else
 class Printer {
 	/**
 		Convert `Xml` to string representation.
@@ -73,11 +70,13 @@ class Printer {
 			case Element:
 				write(tabs + "<");
 				write(value.nodeName.toLowerCase());
-				for (attribute in value.attributes()) {
-					if (StringTools.fastCodeAt(attribute, 0) == ":".code) continue; // pos
-					write(" " + attribute + "=\"");
-					write(StringTools.htmlEscape(value.get(attribute), true));
+				var a = @:privateAccess value.attributeMap;
+				var i = 0;
+				while (i < a.length) {
+					write(" " + a[i] + "=\"");
+					write(StringTools.htmlEscape(a[i + 1], true));
 					write("\"");
+					i += 2;
 				}
 				if (hasChildren(value)) {
 					write(">");
@@ -133,4 +132,3 @@ class Printer {
 		return false;
 	}
 }
-#end

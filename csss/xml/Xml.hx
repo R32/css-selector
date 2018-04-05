@@ -26,9 +26,6 @@
 
 package csss.xml;
 
-#if NO_POS
-typedef Xml = std.Xml;
-#else
 // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType
 @:enum abstract XmlType(Int) to Int {
 	var Element = 1;
@@ -47,17 +44,20 @@ class Xml {
 	public var nodeType(default, null): XmlType;
 	public var nodeName(default, null): String;
 	public var nodeValue(default, null): String;
+	public var nodePos(default, null): Int;
 	public var parent(default, null): Xml;
-
 	var children: Array<Xml>;
-	var attributeMap: Dict<String>;
-
-	public function new(nodeType) {
+	var attributeMap: Array<String>; // [(attr, value)]
+	var attributePos: Array<Int>;
+	function new(nodeType, pos) {
 		this.nodeType = nodeType;
 		if (nodeType == Element || nodeType == Document)
 			children = [];
-		if (nodeType == Element)
-			attributeMap = new Dict();
+		if (nodeType == Element) {
+			attributeMap = [];
+			attributePos = [];
+		}
+		nodePos = pos;
 	}
 
 	public function toString() {
@@ -68,39 +68,64 @@ class Xml {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
-		return attributeMap.get(att);
+		var i = 0;
+		while (i < attributeMap.length) {
+			if (attributeMap[i] == att) return attributeMap[i + 1];
+			i += 2;
+		}
+		return null;
 	}
 
-	public function set( att : String, value : String ) : Void {
+	public function attrPos(name: String): Int {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
-		attributeMap.set(att, value);
+		var i = 0;
+		while (i < attributeMap.length) {
+			if (attributeMap[i] == name) return attributePos[i];
+			i += 2;
+		}
+		return -1;
+	}
+
+	public function set( att : String, value : String, p: Int ) : Void {
+		if (nodeType != Element) {
+			throw 'Bad node type, expected Element but found $nodeType';
+		}
+		attributeMap.push(att);
+		attributeMap.push(value);
+		attributePos.push(p);
 	}
 
 	public function remove( att : String ) : Void {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
-		attributeMap.remove(att);
+		var i = 0;
+		while (i < attributeMap.length) {
+			if (attributeMap[i] == att) {
+				attributeMap.splice(i, 2);
+				attributePos.splice(i, 1);
+			}
+			i += 2;
+		}
 	}
 
-	public function exists( att : String ) : Bool {
-		if (nodeType != Element) {
-			throw 'Bad node type, expected Element but found $nodeType';
-		}
-		return attributeMap.exists(att);
+	public inline function exists( att : String ) : Bool {
+		return get(att) != null;
 	}
 
 	public function attributes() : Iterator<String> {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
-		#if js
-		return attributeMap.keys().iterator();
-		#else
-		return attributeMap.keys();
-		#end
+		var i = 0;
+		var ret = [];
+		while (i < attributeMap.length) {
+			ret.push(attributeMap[i]);
+			i += 2;
+		}
+		return ret.iterator();
 	}
 
 	public inline function iterator() : Iterator<Xml> {
@@ -170,51 +195,49 @@ class Xml {
 
 	// Note: Use UpperCase for name.
 	static public function createElement( name : String, pos: Int ) : Xml {
-		var xml = new Xml(Element);
+		var xml = new Xml(Element, pos);
 		xml.nodeName = name;
-		xml.set(":nodeName", "" + pos);
 		return xml;
 	}
 
 	static public function createPCData( data : String, pos: Int ) : Xml {
-		var xml = new Xml(PCData);
+		var xml = new Xml(PCData, pos);
 		xml.nodeValue = data;
-		xml.nodeName = "#TEXT:" + pos;
+		xml.nodeName = "#TEXT";
 		return xml;
 	}
 
 	static public function createCData( data : String, pos: Int ) : Xml {
-		var xml = new Xml(CData);
+		var xml = new Xml(CData, pos);
 		xml.nodeValue = data;
-		xml.nodeName = "#CDATA:" + pos;
+		xml.nodeName = "#CDATA";
 		return xml;
 	}
 
 	static public function createComment( data : String, pos: Int ) : Xml {
-		var xml = new Xml(Comment);
+		var xml = new Xml(Comment, pos);
 		xml.nodeValue = data;
-		xml.nodeName = "#COMMENT:" + pos;
+		xml.nodeName = "#COMMENT";
 		return xml;
 	}
 
 	static public function createDocType( data : String, pos: Int ) : Xml {
-		var xml = new Xml(DocType);
+		var xml = new Xml(DocType, pos);
 		xml.nodeValue = data;
 		return xml;
 	}
 
 	static public function createProcessingInstruction( data : String, pos: Int ) : Xml {
-		var xml = new Xml(ProcessingInstruction);
+		var xml = new Xml(ProcessingInstruction, pos);
 		xml.nodeValue = data;
 		return xml;
 	}
 
 	static public function createDocument() : Xml {
-		return new Xml(Document);
+		return new Xml(Document, 0);
 	}
 
 	static public function parse( str : String ) : Xml {
 		return csss.xml.Parser.parse(str, false);
 	}
 }
-#end

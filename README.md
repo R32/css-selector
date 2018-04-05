@@ -13,8 +13,6 @@ CSS-Selector With a Modified Xml Parser
 
   use `.querySelector/one` or `.querySelectorAll/all` to query XML. e.g. `xml.querySelectorAll("a:not([href='#'])")`.
 
-  use `.attrPos` or `.nodePos` to got position of attributes/nodeName/nodeValue.
-
   supported descendant selector:
 
   ```
@@ -65,15 +63,20 @@ class Main {
 }
 ```
 
+#### fast iterating attribute
+
+```hx
+function get(xml: Xml, name: String): String {
+    var a: Array<String> = @:privateAccess xml.attributeMap;
+    var i = 0;
+    while(i < a.length) {
+        if (a[i] == attrName) return a[i+1];
+        i += 2;
+    }
+}
+```
+
 ### Issues
-
-* When iterating Attribute, You should skip the posInfo like:
-
-  ```haxe
-  for (name in xml.attributes()) {
-	if (name.charCodeAt(0) == ":".code) continue;  // skip the pos
-  }
-  ```
 
 * [Insolvable] Do not suport escaped single/double quotes.
 

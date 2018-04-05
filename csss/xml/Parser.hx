@@ -105,9 +105,6 @@ class XmlParserException
 	}
 }
 
-#if NO_POS
-typedef Parser = haxe.xml.Parser
-#else
 class Parser
 {
 	static function is_empty_elem(name: String): Bool {
@@ -333,8 +330,7 @@ class Parser
 							buf.addSub(str, start, p - start);
 							var val = buf.toString();
 							buf = new StringBuf();
-							xml.set(aname, val);
-							xml.set(":" + aname, start + "");
+							xml.set(aname, val, start);
 							state = S.IGNORE_SPACES;
 							next = S.BODY;
 					}
@@ -486,4 +482,3 @@ class Parser
 		return true;
 	}
 }
-#end
