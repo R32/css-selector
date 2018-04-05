@@ -74,7 +74,7 @@ class Printer {
 				var i = 0;
 				while (i < a.length) {
 					write(" " + a[i] + "=\"");
-					write(StringTools.htmlEscape(a[i + 1], true));
+					write(a[i + 1]);
 					write("\"");
 					i += 2;
 				}
@@ -95,7 +95,7 @@ class Printer {
 			case PCData:
 				var nodeValue:String = value.nodeValue;
 				if (nodeValue.length != 0) {
-					write(tabs + StringTools.htmlEscape(nodeValue));
+					write(tabs + nodeValue);
 					newline();
 				}
 			case ProcessingInstruction:

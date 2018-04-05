@@ -49,7 +49,6 @@ extern private class S {
 	public static inline var COMMENT		= 15;
 	public static inline var DOCTYPE		= 16;
 	public static inline var CDATA			= 17;
-	public static inline var ESCAPE			= 18;
 }
 
 class XmlParserException
@@ -115,16 +114,6 @@ class Parser
 			return false;
 	}
 
-	static var escapes = {
-		var h = new haxe.ds.StringMap();
-		h.set("lt", "<");
-		h.set("gt", ">");
-		h.set("amp", "&");
-		h.set("quot", '"');
-		h.set("apos", "'");
-		h;
-	}
-
 	/**
 	 * Parses the String into an XML Document. Set strict parsing to true in order to enable a strict check of XML attributes and entities.
 	 *
@@ -147,7 +136,6 @@ class Parser
 		var nsubs = 0;
 		var nbrackets = 0;
 		var c = str.fastCodeAt(p);
-		var buf = new StringBuf();
 		var all_spaces = true;
 		// need extra state because next is in use
 		var escapeNext = S.BEGIN;
@@ -188,22 +176,12 @@ class Parser
 					if (c == '<'.code)
 					{
 						if (all_spaces == false) {  // ignore the empty TextNode
-							buf.addSub(str, start, p - start);
-							addChild(Xml.createPCData(buf.toString(), start));
+							addChild(Xml.createPCData(str.substr(start, p - start), start));
 						}
-						buf = new StringBuf();
 						state = S.IGNORE_SPACES;
 						next = S.BEGIN_NODE;
-					} else {
-						if (c == '&'.code) {
-							buf.addSub(str, start, p - start);
-							state = S.ESCAPE;
-							escapeNext = S.PCDATA;
-							start = p + 1;
-						}
-						if (all_spaces && !csss.CValid.is_space(c)) {
-							all_spaces = false;
-						}
+					} else if (all_spaces && !csss.CValid.is_space(c)){
+						all_spaces = false;
 					}
 				case S.CDATA:
 					if (c == ']'.code && str.fastCodeAt(p + 1) == ']'.code && str.fastCodeAt(p + 2) == '>'.code)
@@ -309,7 +287,6 @@ class Parser
 					switch(c)
 					{
 						case '"'.code | '\''.code:
-							buf = new StringBuf();
 							state = S.ATTRIB_VAL;
 							start = p + 1;
 							attrValQuote = c;
@@ -318,19 +295,11 @@ class Parser
 					}
 				case S.ATTRIB_VAL:
 					switch (c) {
-						case '&'.code:
-							buf.addSub(str, start, p - start);
-							state = S.ESCAPE;
-							escapeNext = S.ATTRIB_VAL;
-							start = p + 1;
 						case '>'.code | '<'.code if( strict ):
 							// HTML allows these in attributes values
 							throw new XmlParserException("Invalid unescaped " + String.fromCharCode(c) + " in attribute value", str, p);
 						case _ if (c == attrValQuote):
-							buf.addSub(str, start, p - start);
-							var val = buf.toString();
-							buf = new StringBuf();
-							xml.set(aname, val, start);
+							xml.set(aname, str.substr(start, p - start), start);
 							state = S.IGNORE_SPACES;
 							next = S.BODY;
 					}
@@ -395,52 +364,6 @@ class Parser
 						addChild(Xml.createProcessingInstruction(str, start));
 						state = S.BEGIN;
 					}
-				case S.ESCAPE:
-					if (c == ';'.code)
-					{
-						var s = str.substr(start, p - start);
-						if (s.fastCodeAt(0) == '#'.code) {
-							var c = s.fastCodeAt(1) == 'x'.code
-								? Std.parseInt("0" +s.substr(1, s.length - 1))
-								: Std.parseInt(s.substr(1, s.length - 1));
-							#if (neko || cpp || php || lua || eval)
-							if( c >= 128 ) {
-								// UTF8-encode it
-								if( c <= 0x7FF ) {
-									buf.addChar(0xC0 | (c >> 6));
-									buf.addChar(0x80 | (c & 63));
-								} else if( c <= 0xFFFF ) {
-									buf.addChar(0xE0 | (c >> 12));
-									buf.addChar(0x80 | ((c >> 6) & 63));
-									buf.addChar(0x80 | (c & 63));
-								} else if( c <= 0x10FFFF ) {
-									buf.addChar(0xF0 | (c >> 18));
-									buf.addChar(0x80 | ((c >> 12) & 63));
-									buf.addChar(0x80 | ((c >> 6) & 63));
-									buf.addChar(0x80 | (c & 63));
-								} else
-									throw new XmlParserException("Cannot encode UTF8-char " + c, str, p);
-							} else
-							#end
-							buf.addChar(c);
-						} else if (!escapes.exists(s)) {
-							if( strict )
-								throw new XmlParserException("Undefined entity: " + s, str, p);
-							buf.add('&$s;');
-						} else {
-							buf.add(escapes.get(s));
-						}
-						start = p + 1;
-						state = escapeNext;
-					} else if (!isValidChar(c) && c != "#".code) {
-						if( strict )
-							throw new XmlParserException("Invalid character in entity: " + String.fromCharCode(c), str, p);
-						buf.addChar("&".code);
-						buf.addSub(str, start, p - start);
-						p--;
-						start = p + 1;
-						state = escapeNext;
-					}
 			}
 			c = str.fastCodeAt(++p);
 		}
@@ -449,24 +372,15 @@ class Parser
 		{
 			start = p;
 			state = S.PCDATA;
-		}
 
+		}
 		if (state == S.PCDATA)
 		{
 			if (p != start || nsubs == 0) {
-				buf.addSub(str, start, p-start);
-				addChild(Xml.createPCData(buf.toString(), start));
+				addChild(Xml.createPCData(str.substr(start, p - start), start));
 			}
 			return p;
 		}
-
-		if( !strict && state == S.ESCAPE && escapeNext == S.PCDATA ) {
-			buf.addChar("&".code);
-			buf.addSub(str, start, p - start);
-			addChild(Xml.createPCData(buf.toString(), start));
-			return p;
-		}
-
 		throw new XmlParserException("Unexpected end", str, p);
 	}
 
