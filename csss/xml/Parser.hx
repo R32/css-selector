@@ -151,6 +151,7 @@ class Parser
 		var nbrackets = 0;
 		var c = str.fastCodeAt(p);
 		var buf = new StringBuf();
+		var all_spaces = true;
 		// need extra state because next is in use
 		var escapeNext = S.BEGIN;
 		var attrValQuote = -1;
@@ -183,24 +184,29 @@ class Parser
 						default:
 							start = p;
 							state = S.PCDATA;
+							all_spaces = true;
 							continue;
 					}
 				case S.PCDATA:
 					if (c == '<'.code)
 					{
-						buf.addSub(str, start, p - start);
-						var value = buf.toString();
-						if (!is_allspace(value, 0, value.length)) { // skip the empty node.
-							addChild(Xml.createPCData(value, start));
+						if (all_spaces == false) {  // ignore the empty TextNode
+							buf.addSub(str, start, p - start);
+							addChild(Xml.createPCData(buf.toString(), start));
 						}
 						buf = new StringBuf();
 						state = S.IGNORE_SPACES;
 						next = S.BEGIN_NODE;
-					} else if (c == '&'.code) {
-						buf.addSub(str, start, p - start);
-						state = S.ESCAPE;
-						escapeNext = S.PCDATA;
-						start = p + 1;
+					} else {
+						if (c == '&'.code) {
+							buf.addSub(str, start, p - start);
+							state = S.ESCAPE;
+							escapeNext = S.PCDATA;
+							start = p + 1;
+						}
+						if (all_spaces && !csss.CValid.is_space(c)) {
+							all_spaces = false;
+						}
 					}
 				case S.CDATA:
 					if (c == ']'.code && str.fastCodeAt(p + 1) == ']'.code && str.fastCodeAt(p + 2) == '>'.code)
