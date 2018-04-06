@@ -82,7 +82,7 @@ class Xml {
 		}
 		var i = 0;
 		while (i < attributeMap.length) {
-			if (attributeMap[i] == name) return attributePos[i];
+			if (attributeMap[i] == name) return attributePos[i >> 1];
 			i += 2;
 		}
 		return -1;
@@ -105,7 +105,7 @@ class Xml {
 		while (i < attributeMap.length) {
 			if (attributeMap[i] == att) {
 				attributeMap.splice(i, 2);
-				attributePos.splice(i, 1);
+				attributePos.splice(i >> 1, 1);
 			}
 			i += 2;
 		}
