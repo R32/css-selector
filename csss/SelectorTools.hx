@@ -23,12 +23,12 @@ class SelectorTools {
 	static function pse2str(sel: Selector): String {
 		if (sel.pseudo.length == 0) return "";
 		var sa = [""];
-		var mp = Selector.mp;
+		var mpsu = Selector.mpsu;
 		for (pe in sel.pseudo) {
 			switch (pe) {
 			case Classes(t):
-				for (k in mp.keys()) {
-					if (mp.get(k) == t) {
+				for (k in mpsu.keys()) {
+					if (mpsu.get(k) == t) {
 						sa.push(k);
 						break;
 					}

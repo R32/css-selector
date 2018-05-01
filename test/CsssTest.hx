@@ -67,7 +67,7 @@ class CsssTest {
 		trace("------ t1 ------");
 		var a = [
 			"a li#uniq.btn.btn-primary[title][name^=hello]:empty",
-			"a span, a li:not(:first-child) > span[title]:",
+			"a span:last-child, a li:not(:first-child) > span[title]",
 			"a.btn:nth-child( -201 )",
 			":nth-child(-n+01)",
 			":nth-child(-0n+20)",
@@ -78,7 +78,6 @@ class CsssTest {
 		];
 		for (sel in a) {
 			var list = Selector.parse(sel);
-			if (list == null) return;
 			var s = [for (c in list) c.toString()].join(", ");
 			trace(s);
 		}
@@ -97,19 +96,13 @@ class CsssTest {
 	}
 
 	static function t4() @:privateAccess {
-		trace("------ t4 ------");
+		trace("------ t4 query ------");
 		var txt = haxe.Resource.getString("myxml");
 		var html = csss.xml.Parser.parse(txt).firstElement();
 		var body = html.elementsNamed("body").next();
-		var selector = "#uniq";
-		trace('run body.querySelector("$selector")...');
-		var x = html.querySelector(selector);
-		trace("find: " + x);
-
 		#if js
 		js.Lib.global.qq = function(str: String) {
-			trace('run body.querySelector("$str")...');
-			var x = body.querySelector(str);
+			var x = html.querySelector(str);
 			if (x == null) {
 				trace(x);
 			} else {
@@ -118,11 +111,8 @@ class CsssTest {
 		}
 
 		js.Lib.global.qa = function(str: String) {
-			trace('run body.querySelectorAll("$str")...');
-			var a = body.querySelectorAll(str);
-			for (x in a) {
-				trace(x.toSimpleString());
-			}
+			var a = html.querySelectorAll(str);
+			trace(a.map(x->x.toSimpleString()).join(", "));
 		}
 
 		var doc = html.parent;
@@ -132,10 +122,8 @@ class CsssTest {
 			if (p == null) {
 				if (xml == top || top.contains(xml))
 					js.Browser.console.error('Error Line: ${pos.lineNumber}');
-				else
-					js.Browser.console.log('Passed Line : ${pos.lineNumber}');
 			} else {
-				js.Browser.console.log("Found in [" + p.join(",") + "] " + (p.toXml(top) == xml));
+				eq(p.toXml(top) == xml);
 			}
 		}
 		sub(html, null);
@@ -148,7 +136,12 @@ class CsssTest {
 		sub(st3.one(".L2-3-s"), st3);
 		sub(st3.one(".L2-3-s"), null);
 		sub(html.one("#uniq"), st3);
+		//
 		#end
+	}
+
+	static function eq(b, ?pos: haxe.PosInfos) {
+		if (!b) throw "Error Line: " + pos.lineNumber;
 	}
 
 	macro static function t2() {

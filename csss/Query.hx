@@ -86,6 +86,8 @@ class Query {
 			}
 			var pnm = NM.PNM.ofNM(new NM(n, m));
 			return ei <= pnm.max && pnm.valid(ei);
+		} else if (n == 0) {
+			return ei == m;
 		} else {
 			return ei >= m && (ei - m) % n == 0;
 		}
