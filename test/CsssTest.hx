@@ -68,10 +68,12 @@ class CsssTest {
 		var a = [
 			"a li#uniq.btn.btn-primary[title][name^=hello]:empty",
 			"a span:last-child, a li:not(:first-child) > span[title]",
-			"a.btn:nth-child( -201 )",
+			"a.btn:nth-child( -2n + 01 )",
 			":nth-child(-n+01)",
 			":nth-child(-0n+20)",
 			":nth-child(+0n+003)",
+			":nth-child( -0n+2 )",
+			":nth-child( -n-2 )",
 			//":nth-last-child(0n - 40)",
 			//":nth-last-child(+210n + 50)",
 			//":nth-last-child(n)",

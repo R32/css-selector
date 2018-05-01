@@ -292,7 +292,7 @@ class Selector {
 					left = pos - 1;
 					pos = until_pos(is_anum);
 				} else {
-					Error.exitWith(InvalidChar,str.charAt(pos - 1), pos - 1, ERR_POS);
+					Error.exitWith(InvalidChar, str.charAt(pos - 1), pos - 1, ERR_POS);
 				}
 			}
 			cur.attr.push(new Attrib(key, str.substr(left, pos - left), type)); // if pos == left then empty string("")
@@ -309,92 +309,77 @@ class Selector {
 
 	static function nth(str: String, pos: Int, max: Int, cur: Selector, type: PElemType): Int {
 		inline function char(p) return str.fastCodeAt(p);
-		var left = pos;
-		var n = 2, m = 1; // 2n + 1
+		var n = 1, m = 0;
 		if (str.substr(pos, pos + 4).toLowerCase() == "even") {
-			m = 0;        // 2n + 0
+			n = 2; // 2n + 0
 			pos += 4;
 		} else if (str.substr(pos, pos + 3).toLowerCase() == "odd") {
+			n = 2; // 2n + 1
+			m = 1;
 			pos += 3;
-		} else {          // .split("n") => [n, m]
-			var state = 0;
-			var minus = false;
-			var c = char(pos);
+		} else {
+			var gotN = false;
+			var t: Null<Int> = null;
+			var sign = 2;      // 0 == "+", 1 == "-"
+			var c;
+			var ep = pos;
 			while (pos < max) {
-				switch (state) {
-				case 0:  // BEGIN
-					switch (c) {
-					case "n".code, "N".code:
-						if (pos == left) {
-							n = 1;
-						} else {
-							c = char(left);
-							if (c == "-".code) {
-								minus = true;
-								++ left;
-							} else if (c == "+".code) {
-								minus = false;
-								++ left;
-							}
-							if (pos == left) { // c == "-" || c == "+"
-								n = 1;
-							} else if (until(str, left, pos, is_number) == pos) {
-								n = int(str.substr(left, pos - left));
-							} else {
-								Error.exitWith(InvalidArgument, str.substr(left, pos - left), left, ERR_POS);
-							}
-							if (minus) n = -n;
-						}
-						state = 1;   // Go Next
-					case ")".code:
-						if (pos == left) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
+				c = char(pos);
+				switch (c) {
+				case "n".code, "N".code:
+					if (gotN) Error.exitWith(InvalidChar, "n", pos, ERR_POS);
+					gotN = true;
+					t = null;
+					sign = 2;  // reset
+				case "-".code:
+					if (sign < 2) Error.exitWith(InvalidChar, "-", pos, ERR_POS);
+					sign = 1;
+					if (!gotN && (char(pos + 1) | 0x20) == "n".code) n = -1;
+				case "+".code:
+					if (sign < 2) Error.exitWith(InvalidChar, "+", pos, ERR_POS);
+					sign = 0;
+				case ")".code:
+					if (t == null && (!gotN || sign < 2)) {
+						Error.exitWith(InvalidArgument, str.substr(ep, pos - ep), ep, ERR_POS);
+					}
+					if (!gotN) {
+						m = n;
 						n = 0;
-						c = char(left);
-						if (c == "-".code) {
-							minus = true;
-							++left;
-						} else if (c == "+".code) {
-							minus = false;
-							++left;
-						}
-						if (pos > left) {
-							pos = until(str, left, pos, is_number);
-							m = int(str.substr(left, pos - left));
-							if (minus) m = -m;
-						} else {
-							Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
-						}
-						max = 0;  // break loop
-						continue;
-					default:
-						if (is_space(c) && char(ignore_space(str, pos, max)) != ")".code)
-							Error.exitWith(UnexpectedWhitespace, str.charAt(pos - 1), pos - 1, ERR_POS);
 					}
-				case 1: // str[pos - 1] = 'n';
-					pos = ignore_space(str, pos, max);
-					c = char(pos);
-					if (c == ")".code) {
-						m = 0;
-					} else {
-						if (c == "+".code) {
-							minus = false;
-						} else if (c == "-".code) {
-							minus = true;
-						} else {
-							Error.exitWith(Expected, "+/-", pos, ERR_POS);
-						}
-						pos = ignore_space(str, pos + 1, max);
-						left = pos;
-						pos = until(str, pos, max, is_number);
-						if (pos == left) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
-						m = int(str.substr(left, pos - left)); // all is number
-						if (minus) m = -m;
-					}
-					max = 0;  // break loop
+					max = 0;  // break loop;
 					continue;
 				default:
+					if (is_number(c)) {
+						if (t != null)
+							Error.exitWith(InvalidArgument, str.substr(ep, pos - ep), ep, ERR_POS);
+						var left = pos;
+						pos = until(str, pos + 1, max, is_number);
+						t = int(str.substr(left, pos - left));
+						if (sign > 1) {
+							sign = 0;       // disable rec "sign"
+						} else if (sign == 1 && t > 0) {
+							t = -t;
+						}
+						if (gotN) {
+							m = t;
+						} else {
+							n = t;
+						}
+						continue;
+					} else if (c == " ".code || c == "\t".code) {
+						if (!gotN) {       // e.g: nth-child(" 2 ")
+							if (t == null) // e.g: nth-child(" + ")
+								Error.exitWith(InvalidArgument, str.substr(ep, pos - ep), ep, ERR_POS);
+							m = n;
+							n = 0;
+							t = 0;         // disalbe rec "int"
+							gotN = true;   // disable rec "n"
+						}
+					} else {
+						Error.exitWith(InvalidChar, str.substr(pos, 1), pos, ERR_POS);
+					}
 				}
-				c = char(++pos);
+				++ pos;
 			}
 		}
 		cur.pseudo.push(Nth(type, n, m));

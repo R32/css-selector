@@ -23,7 +23,7 @@ CSS-Selector With a Modified Xml Parser
   E ~ F : supported  Note:
   ```
 
-  supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L536-L552)
+  supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L450-L467)
 
 * `-D NO_UPPER`: Keep tagName case
 
