@@ -25,6 +25,8 @@ CSS-Selector With a Modified Xml Parser
 
   supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L536-L552)
 
+* `-D NO_UPPER`: Keep tagName case
+
 example:
 
 ```haxe

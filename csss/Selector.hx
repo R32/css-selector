@@ -158,7 +158,6 @@ class Selector {
 
 	static function doParse(str: String, pos: Int, max: Int, cur: Selector, list: Array<Selector>): Void {
 		var state = NEW;
-		var next = NEW;
 		var left: Int;
 		var c: Int;
 
@@ -183,8 +182,8 @@ class Selector {
 					if (is_alpha_u(c)) {
 						left = pos;
 						pos = until(str, pos + 1, max, is_anum);
-					#if NO_POS
-						cur.name = str.substr(left, pos - left).toLowerCase();
+					#if NO_UPPER
+						cur.name = str.substr(left, pos - left);
 					#else
 						cur.name = str.substr(left, pos - left).toUpperCase();
 					#end
@@ -510,8 +509,8 @@ class Selector {
 			if (is_alpha_u(c)) {
 				left = pos - 1;
 				pos = until_pos(is_anum);
-			#if NO_POS
-				cur.name = substr().toLowerCase();
+			#if NO_UPPER
+				cur.name = substr();
 			#else
 				cur.name = substr().toUpperCase();
 			#end

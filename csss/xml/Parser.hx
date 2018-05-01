@@ -239,7 +239,11 @@ class Parser
 					{
 						if( p == start )
 							throw new XmlParserException("Expected node name", str, p);
+						#if NO_UPPER
+						xml = Xml.createElement(str.substr(start, p - start), start);
+						#else
 						xml = Xml.createElement(str.substr(start, p - start).toUpperCase(), start);
+						#end
 						addChild(xml);
 						state = S.IGNORE_SPACES;
 						next = S.BODY;
@@ -330,8 +334,11 @@ class Parser
 					{
 						if( start == p )
 							throw new XmlParserException("Expected node name", str, p);
-
+						#if NO_UPPER
+						var v = str.substr(start,p - start);
+						#else
 						var v = str.substr(start,p - start).toUpperCase();
+						#end
 						if (v != parent.nodeName)
 							throw new XmlParserException("Expected </" +parent.nodeName + ">", str, p);
 
