@@ -112,6 +112,10 @@ class Selector {
 		fs = null;
 	}
 
+	public function have() { // notEmpty
+		return name != "" || classes.length > 0 || (id != null && id != "") || attr.length > 0 || pseudo.length > 0;
+	}
+
 	public inline function toString(): String {
 		return SelectorTools.toString(this);
 	}
@@ -136,7 +140,7 @@ class Selector {
 			list.push(new Selector(None));
 			doParse(s, 0, s.length, list[0], list);
 			if (Error.no < 0) {
-				list = []; // empty.
+				list = []; // empty. call Error.str("any") to get error message.
 			}
 		}
 		return list;
@@ -147,6 +151,7 @@ class Selector {
 
 		var left: Int;
 		var c: Int;
+		var ctype: ChildType = None;
 		pos = ignore_space(str, pos, max);
 
 		if (char(pos) == "*".code) {
@@ -174,26 +179,28 @@ class Selector {
 				pos = on_pseudo(str, pos, max, cur);
 				if (pos == ERR_POS) return;
 			case ",".code:
-				var sib = new Selector(None);
-				list.push(sib);
-				doParse(str, pos, max, sib, list);
-				return;
-			case " ".code,
-				 ">".code,
+				if (!cur.have()) Error.exit(InvalidChar, str.charAt(pos - 1), pos - 1);
+				cur = new Selector(None);
+				list.push(cur);
+				pos = ignore_space(str, pos, max);
+			case " ".code:
+				if (ctype == None)
+					ctype = Space;
+				pos = ignore_space(str, pos, max);
+				c = char(pos);
+				if (!(c == ",".code || c == ">".code || c == "+".code || c == "~".code)) {
+					cur.sub = new Selector(ctype);
+					cur = cur.sub;
+				}
+			case ">".code,
 				 "+".code,
 				 "~".code:
+				if (!(ctype == None || ctype == Space) || !cur.have())
+					Error.exit(InvalidChar, str.charAt(pos - 1), pos - 1);
+				ctype = ChildType.ofInt(c);
 				pos = ignore_space(str, pos, max);
-				var rel = ChildType.ofInt(c);
-				if (pos < max) {
-					c = char(pos);
-					if (c == ">".code || c == "+".code || c == "~".code) {
-						rel = ChildType.ofInt(c);
-						pos = ignore_space(str, pos + 1, max);
-					}
-					cur.sub = new Selector(rel);
-					doParse(str, pos, max, cur.sub, list);
-				}
-				return;
+				cur.sub = new Selector(ctype);
+				cur = cur.sub;
 			default:
 				if (is_alpha_u(c) && cur.name != "*") {
 					left = pos - 1;

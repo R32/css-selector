@@ -132,7 +132,7 @@ class Query {
 		return ret;
 	}
 
-	function search(children: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Xml {
+	function search(siblling: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Xml {
 		if (sel.fs == null) sel.calcFilters();
 		var fs = sel.fs;
 		if (fs.length == 0) {
@@ -155,7 +155,7 @@ class Query {
 		inline function has_sub_selector() { return ctype != None; }
 
 		while (i < max) {
-			xml = children[i];
+			xml = siblling[i];
 			if (xml.nodeType == Element) {
 				succeed = applyFilters(xml, fs, j);
 
@@ -163,7 +163,7 @@ class Query {
 					return xml;
 				else if (sib || adj) {
 					saveState();
-					ret = search(children, i, i + 1, j, sel.sub, false); // TODO: i + 1
+					ret = search(siblling, i, i + 1, j, sel.sub, false); // TODO: i + 1
 					if (ret != null) return ret;
 					if (state == Invalid) break;
 					resState();
@@ -200,12 +200,12 @@ class Query {
 		return ret;
 	}
 
-	function searchAll(out: Array<Xml>, children: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Void {
+	function searchAll(out: Array<Xml>, siblling: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Void {
 		if (sel.fs == null) sel.calcFilters();
 		var fs = sel.fs;
 		if (fs.length == 0) {
 			state = Invalid;
-			return null;
+			return;
 		}
 
 		var xml: Xml;
@@ -222,7 +222,7 @@ class Query {
 		inline function has_sub_selector() { return ctype != None; }
 
 		while (i < max) {
-			xml = children[i];
+			xml = siblling[i];
 			if (xml.nodeType == Element) {
 				succeed = applyFilters(xml, fs, j);
 
@@ -230,7 +230,7 @@ class Query {
 					out.push(xml);
 				} else if (sib || adj) {
 					saveState();
-					searchAll(out, children, i, i + 1, j, sel.sub, false); // TODO: looking for anather way instead of i + 1
+					searchAll(out, siblling, i, i + 1, j, sel.sub, false); // TODO: looking for anather way instead of i + 1
 					if (state == Invalid) break;
 					resState();
 				}
@@ -345,11 +345,12 @@ class Query {
 			}
 			p.sort(Path.PTools.onSort);    // sort
 			ret = [];
-			ret.push(p[0].toXml(top));
+			if (p.length > 0)
+				ret.push(p[0].toXml(top));
 			var j = 1;
 			for (i in 1...p.length) {
 				var x = p[i].toXml(top);
-				if (x != ret[j - 1]) {       // eliminate duplicates
+				if (x != ret[j - 1]) {     // eliminate duplicates
 					ret.push(x);
 					++ j;
 				}

@@ -77,8 +77,8 @@ class NM {
 class PNM extends NM {
 	public var max(default, null): Int;
 	function new(n, m, max) {
-		this.max = max;
 		super(n, m);
+		this.max = max;
 	}
 
 	// for :nth-child() when "n" is less than 0.
