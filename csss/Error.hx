@@ -23,8 +23,7 @@ class Error {
 	}
 
 	macro public static function exit(message, extra, pos) return macro @:mergeBlock {
-		csss.Error.set($message, $extra, $pos);
-		return;
+		return csss.Error.set($message, $extra, $pos);
 	}
 	macro public static function exitWith(message, extra, pos, retval) return macro @:mergeBlock {
 		csss.Error.set($message, $extra, $pos);

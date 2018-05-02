@@ -140,6 +140,11 @@ class Selector {
 			doParse(s, 0, s.length, list[0], list);
 			if (Error.no < 0) {
 				list = []; // empty. call Error.str("any") to get error message.
+			#if sys
+				Sys.println(Error.str("css parse error: "));
+			#elseif js
+				js.Syntax.code("console.log({0})", Error.str("css parse error: "));
+			#end
 			}
 		}
 		return list;
@@ -255,7 +260,7 @@ class Selector {
 				}
 			}
 			pos = ignore_space(str, pos, max);
-			if (char(pos) != ")".code) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
+			if (char(pos) != ")".code) Error.exitWith(Expected, ")", pos, ERR_POS);
 			++ pos;
 		} else {
 			cur.pseudo.push(Classes( PClsType.ofInt(type)));
