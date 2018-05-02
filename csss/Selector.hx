@@ -120,17 +120,16 @@ class Selector {
 		return SelectorTools.toString(this);
 	}
 
-	public function calcFilters() {
-		var cur = this;
-		while (cur != null) {
-			cur.fs = [];
-			if (cur.id != null && cur.id != "") cur.fs.push( Id(cur.id) );
-			if (cur.name != "") cur.fs.push(Name(cur.name));
-			for (p in cur.pseudo) cur.fs.push(PSU(p));
-			for (s in cur.classes) cur.fs.push(Cls(s));
-			for (a in cur.attr) cur.fs.push(Attr(a));
-			cur = cur.sub;
+	public function calcFilters(): Array<Filter> {
+		while (fs == null) {
+			fs = [];
+			if (id != null && id != "") fs.push( Id(id) );
+			if (name != "") fs.push(Name(name));
+			for (p in pseudo) fs.push(PSU(p));
+			for (s in classes) fs.push(Cls(s));
+			for (a in attr) fs.push(Attr(a));
 		}
+		return fs;
 	}
 
 	public static function parse(s: String): Array<Selector> {
@@ -184,13 +183,15 @@ class Selector {
 				list.push(cur);
 				pos = ignore_space(str, pos, max);
 			case " ".code:
-				if (ctype == None)
-					ctype = Space;
+				ctype = Space;
 				pos = ignore_space(str, pos, max);
-				c = char(pos);
-				if (!(c == ",".code || c == ">".code || c == "+".code || c == "~".code)) {
-					cur.sub = new Selector(ctype);
-					cur = cur.sub;
+				if (pos < max) {
+					c = char(pos);
+					if (!(c == ",".code || c == ">".code || c == "+".code || c == "~".code)) {
+						cur.sub = new Selector(ctype);
+						cur = cur.sub;
+						ctype = None;
+					}
 				}
 			case ">".code,
 				 "+".code,
@@ -201,6 +202,7 @@ class Selector {
 				pos = ignore_space(str, pos, max);
 				cur.sub = new Selector(ctype);
 				cur = cur.sub;
+				ctype = None;
 			default:
 				if (is_alpha_u(c) && cur.name != "*") {
 					left = pos - 1;

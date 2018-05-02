@@ -133,8 +133,7 @@ class Query {
 	}
 
 	function search(siblling: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Xml {
-		if (sel.fs == null) sel.calcFilters();
-		var fs = sel.fs;
+		var fs = sel.calcFilters();
 		if (fs.length == 0) {
 			state = Invalid;
 			return null;
@@ -201,8 +200,7 @@ class Query {
 	}
 
 	function searchAll(out: Array<Xml>, siblling: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Void {
-		if (sel.fs == null) sel.calcFilters();
-		var fs = sel.fs;
+		var fs = sel.calcFilters();
 		if (fs.length == 0) {
 			state = Invalid;
 			return;
