@@ -11,7 +11,7 @@ CSS-Selector With a Modified Xml Parser
 
 * Ease To Use.
 
-  use `.querySelector/one` or `.querySelectorAll/all` to query XML. e.g. `xml.querySelectorAll("a:not([href='#'])")`.
+  use `.querySelector/one` or `.querySelectorAll/all` to query XML. e.g. `xml.all("a:not([href='#'])")`.
 
   supported descendant selector:
 
@@ -19,11 +19,11 @@ CSS-Selector With a Modified Xml Parser
   E :   supported
   E F : supported
   E > F : supported
-  E + F : supported  Note:
-  E ~ F : supported  Note:
+  E + F : supported  Note: Partial
+  E ~ F : supported  Note: Partial
   ```
 
-  supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L450-L467)
+  supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L459-L476)
 
 * `-D NO_UPPER`: Keep tagName case
 
@@ -65,26 +65,13 @@ class Main {
 }
 ```
 
-#### fast iterating attribute
-
-```hx
-function get(xml: Xml, name: String): String {
-    var a: Array<String> = @:privateAccess xml.attributeMap;
-    var i = 0;
-    while(i < a.length) {
-        if (a[i] == attrName) return a[i+1];
-        i += 2;
-    }
-}
-```
-
 ### Issues
 
 * [Insolvable] Do not suport escaped single/double quotes.
 
   e.g: `a[title="hi \"name\"."]` will get a unexpected value.
 
-* Do not suport **two** consecutive `+` or `~`. see [Query TODO](csss/Query.hx?ts=4#L233)
+* Do not suport **two** consecutive `+` or `~`.
 
   Invalid: `"li + li + li"`, `"li ~ li ~ li"`, `"li + li ~ li"`, `"li ~ li + li"`
 
