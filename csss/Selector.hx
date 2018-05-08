@@ -324,10 +324,10 @@ class Selector {
 	static function nth(str: String, pos: Int, max: Int, cur: Selector, type: PElemType): Int {
 		inline function char(p) return str.fastCodeAt(p);
 		var n = 1, m = 0;
-		if (str.substr(pos, pos + 4).toLowerCase() == "even") {
+		if (str.substr(pos, 4).toLowerCase() == "even") {
 			n = 2; // 2n + 0
 			pos += 4;
-		} else if (str.substr(pos, pos + 3).toLowerCase() == "odd") {
+		} else if (str.substr(pos, 3).toLowerCase() == "odd") {
 			n = 2; // 2n + 1
 			m = 1;
 			pos += 3;
