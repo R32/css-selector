@@ -74,15 +74,6 @@ class Attrib {
 	}
 }
 
-@:enum extern abstract ParseError(Int) to Int {
-	var None = 0;
-	var InvalidChar     = -1;
-	var InvalidSelector = -2;
-	var Expected        = -3;
-	var InvalidArgument = -4;
-	var UnexpectedWhitespace = -5;
-}
-
 enum Filter {
 	Name(name: String);
 	Id(s: String);
@@ -132,30 +123,39 @@ class Selector {
 		return fs;
 	}
 
+	public static var errno(default, null): Error;
+
 	public static function parse(s: String): Array<Selector> {
 		var list: Array<Selector> = [];
-		Error.clear();
 		if (s != null && s != "") {
 			list.push(new Selector(None));
-			doParse(s, 0, s.length, list[0], list);
-			if (Error.no < 0) {
-				list = []; // empty. call Error.str("any") to get error message.
+			errno =	doParse(s, 0, s.length, list[0], list);
+			var errmsg = switch (errno.type) {
+			case None: null;
+			case InvalidChar: 'InvalidChar: ${s.charAt(errno.pos)}, pos: ${errno.pos}';
+			case InvalidSelector: 'InvalidSelector: ${s.substr(errno.pos, errno.len)}, pos: ${errno.pos}';
+			case Expected: 'Expected: ${String.fromCharCode(errno.len)}, pos: ${errno.pos}';
+			case InvalidArgument: 'InvalidArgument: ${s.substr(errno.pos, errno.len)}, pos: ${errno.pos}';
+			}
+			if (errmsg != null) {
+				list = [];
 			#if sys
-				Sys.println(Error.str("css parse error: "));
+				Sys.println("css parse error: " + errmsg);
 			#elseif js
-				js.Syntax.code("console.log({0})", Error.str("css parse error: "));
+				js.Syntax.code("console.log({0})", "css parse error: " + errmsg);
 			#end
 			}
 		}
 		return list;
 	}
 
-	static function doParse(str: String, pos: Int, max: Int, cur: Selector, list: Array<Selector>): Void {
+	static function doParse(str: String, pos: Int, max: Int, cur: Selector, list: Array<Selector>): Error {
 		inline function char(p) return str.fastCodeAt(p);
 
 		var left: Int;
 		var c: Int;
 		var ctype: ChildType = None;
+		var err:Error = Empty;
 		pos = ignore_space(str, pos, max);
 
 		if (char(pos) == "*".code) {
@@ -169,21 +169,23 @@ class Selector {
 			case ".".code:
 				left = pos;
 				pos = ident(str, left, max, is_alpha_um, is_anum);
-				if (left == pos) Error.exit(InvalidChar, str.charAt(pos), pos);
+				if (left == pos) return Error.exit(InvalidChar, pos, 1);
 				cur.classes.push(str.substr(left, pos - left));
 			case "#".code:
 				left = pos;
 				pos = ident(str, left, max, is_alpha_um, is_anum);
-				if (left == pos) Error.exit(InvalidChar, str.charAt(pos), pos);
+				if (left == pos) return Error.exit(InvalidChar, pos, 1);
 				cur.id = str.substr(left, pos - left);
 			case "[".code:
-				pos = on_attr(str, pos, max, cur);
-				if (pos == ERR_POS) return;
+				err = on_attr(str, pos, max, cur);
+				if (err.type != None) return err;
+				pos = err.pos;
 			case ":".code:
-				pos = on_pseudo(str, pos, max, cur);
-				if (pos == ERR_POS) return;
+				err = on_pseudo(str, pos, max, cur);
+				if (err.type != None) return err;
+				pos = err.pos;
 			case ",".code:
-				if (!cur.have()) Error.exit(InvalidChar, str.charAt(pos - 1), pos - 1);
+				if (!cur.have()) return Error.exit(InvalidChar, pos - 1, 1);
 				cur = new Selector(None);
 				list.push(cur);
 				pos = ignore_space(str, pos, max);
@@ -202,7 +204,7 @@ class Selector {
 				 "+".code,
 				 "~".code:
 				if (!(ctype == None || ctype == Space) || !cur.have())
-					Error.exit(InvalidChar, str.charAt(pos - 1), pos - 1);
+					return Error.exit(InvalidChar, pos - 1, 1);
 				ctype = ChildType.ofInt(c);
 				pos = ignore_space(str, pos, max);
 				cur.sub = new Selector(ctype);
@@ -218,14 +220,15 @@ class Selector {
 					cur.name = str.substr(left, pos - left).toUpperCase();
 				#end
 				} else {
-					Error.exit(InvalidChar, str.charAt(pos - 1), pos - 1);
+					return Error.exit(InvalidChar, pos - 1, 1);
 				}
 			}
 		}
+		return Error.non(pos);
 	}
 
 	// str[pos-1] == ":"
-	static function on_pseudo(str: String, pos: Int, max: Int, cur: Selector): Int {
+	static function on_pseudo(str: String, pos: Int, max: Int, cur: Selector): Error {
 		inline function char(p) return str.fastCodeAt(p);
 		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
 		inline function until_pos(callb) return until(str, pos, max, callb);
@@ -233,42 +236,45 @@ class Selector {
 		if (char(pos) == ":".code) ++pos; // skip ::
 		var left = pos;
 		pos = until_pos(is_alpha_um);
-		if (left == pos) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
+		if (left == pos) return Error.exit(InvalidChar, pos, 1);
 		var name = str.substr(left, pos - left);
 		var type = mpsu.get(name);
-		if (type == null) Error.exitWith(InvalidSelector, name, left, ERR_POS);  // name exists
+		if (type == null) return Error.exit(InvalidSelector, left, pos - left);  // name exists
 		var c = char(pos);
+		var err: Error = Empty;
 		if (c == "(".code) {
 			pos = ignore_space(str, pos + 1, max);
 			switch (name) {
 			case "lang":
 				left = pos;
 				pos = ident_pos(is_alpha_um, is_anum);
-				if (pos == left) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
+				if (pos == left) return Error.exit(InvalidChar, pos, 1);
 				cur.pseudo.push(Lang(str.substr(left, pos - left)));
 			case "not": // TODO
 				var no = new Selector(None);
-				pos = psnot(str, pos, max, no);
-				if (pos == ERR_POS) return ERR_POS;
+				err = psnot(str, pos, max, no);
+				if (err.type != None) return err;
+				pos = err.pos;
 				cur.pseudo.push(Not(no));
 			default:
 				if (name.substr(0, 3) == "nth") {
-					pos = nth(str, pos, max, cur, PElemType.ofInt(type));
-					if (pos == ERR_POS) return ERR_POS;
+					err = nth(str, pos, max, cur, PElemType.ofInt(type));
+					if (err.type != None) return err;
+					pos = err.pos;
 				} else {
-					Error.exitWith(InvalidSelector, name, left, ERR_POS);
+					return Error.exit(InvalidSelector, left, pos - left);
 				}
 			}
 			pos = ignore_space(str, pos, max);
-			if (char(pos) != ")".code) Error.exitWith(Expected, ")", pos, ERR_POS);
+			if (char(pos) != ")".code) return Error.exit(Expected, pos, ")".code);
 			++ pos;
 		} else {
 			cur.pseudo.push(Classes( PClsType.ofInt(type)));
 		}
-		return pos;
+		return Error.non(pos);
 	}
 	// str[pos-1] == "["
-	static function on_attr(str: String, pos: Int, max: Int, cur: Selector): Int {
+	static function on_attr(str: String, pos: Int, max: Int, cur: Selector): Error {
 		inline function char(p) return str.fastCodeAt(p);
 		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
 		inline function until_pos(callb) return until(str, pos, max, callb);
@@ -276,7 +282,7 @@ class Selector {
 		pos = ignore_space(str, pos, max);
 		var left = pos;
 		pos = ident_pos(is_attr_first, is_anumx);
-		if (pos == left) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
+		if (pos == left) return Error.exit(InvalidChar, pos, 1);
 		var key = str.substr(left, pos - left);
 		pos = ignore_space(str, pos, max);
 		var c = char(pos++);
@@ -290,7 +296,7 @@ class Selector {
 			 "*".code,
 			 "|".code:
 			if (c != "=".code) {
-				if (char(pos++) != "=".code) Error.exitWith(Expected, "=", pos - 1, ERR_POS);
+				if (char(pos++) != "=".code) return Error.exit(Expected, pos - 1, "=".code);
 			}
 			var type = AttrType.ofInt(c);
 			pos = ignore_space(str, pos, max);
@@ -306,7 +312,7 @@ class Selector {
 					left = pos - 1;
 					pos = until_pos(is_anum);
 				} else {
-					Error.exitWith(InvalidChar, str.charAt(pos - 1), pos - 1, ERR_POS);
+					return Error.exit(InvalidChar, pos - 1, 1);
 				}
 			}
 			cur.attr.push(new Attrib(key, str.substr(left, pos - left), type)); // if pos == left then empty string("")
@@ -314,14 +320,14 @@ class Selector {
 			if (c == '"'.code || c == "'".code) ++pos;
 			pos = ignore_space(str, pos, max);
 			c = char(pos++);
-			if (c != "]".code) Error.exitWith(Expected, "]", pos - 1, ERR_POS);
+			if (c != "]".code) return Error.exit(Expected, pos - 1, "]".code);
 		default:
-			Error.exitWith(InvalidChar, str.charAt(pos - 1), pos - 1, ERR_POS);
+			return Error.exit(InvalidChar, pos - 1, 1);
 		}
-		return pos;
+		return Error.non(pos);
 	}
 
-	static function nth(str: String, pos: Int, max: Int, cur: Selector, type: PElemType): Int {
+	static function nth(str: String, pos: Int, max: Int, cur: Selector, type: PElemType): Error {
 		inline function char(p) return str.fastCodeAt(p);
 		var n = 1, m = 0;
 		if (str.substr(pos, 4).toLowerCase() == "even") {
@@ -341,20 +347,20 @@ class Selector {
 				c = char(pos);
 				switch (c) {
 				case "n".code, "N".code:
-					if (gotN) Error.exitWith(InvalidChar, "n", pos, ERR_POS);
+					if (gotN) return Error.exit(InvalidChar, pos, 1);
 					gotN = true;
 					t = null;
 					sign = 2;  // reset
 				case "-".code:
-					if (sign < 2) Error.exitWith(InvalidChar, "-", pos, ERR_POS);
+					if (sign < 2) return Error.exit(InvalidChar, pos, 1);
 					sign = 1;
 					if (!gotN && (char(pos + 1) | 0x20) == "n".code) n = -1;
 				case "+".code:
-					if (sign < 2) Error.exitWith(InvalidChar, "+", pos, ERR_POS);
+					if (sign < 2) return Error.exit(InvalidChar, pos, 1);
 					sign = 0;
 				case ")".code:
 					if (t == null && (!gotN || sign < 2)) {
-						Error.exitWith(InvalidArgument, str.substr(ep, pos - ep), ep, ERR_POS);
+						return Error.exit(InvalidArgument, ep, pos - ep);
 					}
 					if (!gotN) {
 						m = n;
@@ -365,7 +371,7 @@ class Selector {
 				default:
 					if (is_number(c)) {
 						if (t != null)
-							Error.exitWith(InvalidArgument, str.substr(ep, pos - ep), ep, ERR_POS);
+							return Error.exit(InvalidArgument, ep, pos - ep);
 						var left = pos;
 						pos = until(str, pos + 1, max, is_number);
 						t = int(str.substr(left, pos - left));
@@ -383,21 +389,21 @@ class Selector {
 					} else if (c == " ".code || c == "\t".code) {
 						if (!gotN) {       // e.g: nth-child(" 2 ")
 							if (t == null) // e.g: nth-child(" + ")
-								Error.exitWith(InvalidArgument, str.substr(ep, pos - ep), ep, ERR_POS);
+								return Error.exit(InvalidArgument, ep, pos - ep);
 							m = n;
 							n = 0;
 							t = 0;         // disalbe rec "int"
 							gotN = true;   // disable rec "n"
 						}
 					} else {
-						Error.exitWith(InvalidChar, str.substr(pos, 1), pos, ERR_POS);
+						return Error.exit(InvalidChar, pos, 1);
 					}
 				}
 				++ pos;
 			}
 		}
 		cur.pseudo.push(Nth(type, n, m));
-		return pos;
+		return Error.non(pos);
 	}
 
 	// make sure all char is number and s != null and s != ""
@@ -413,30 +419,33 @@ class Selector {
 	}
 
 	// for ":not( |single-selector| )".
-	static function psnot(str: String, pos: Int, max: Int, cur: Selector): Int {
+	static function psnot(str: String, pos: Int, max: Int, cur: Selector): Error {
 		inline function char(p) return str.fastCodeAt(p);
 		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
 		inline function until_pos(callb) return until(str, pos, max, callb);
 
 		var left: Int;
 		var c = char(pos++);
+		var err: Error = Empty;
 		switch (c) {
 		case ".".code:
 			left = pos;
 			pos = ident_pos(is_alpha_um, is_anum);
-			if (pos == left) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
+			if (pos == left) return Error.exit(InvalidChar, pos, 1);
 			cur.classes.push(str.substr(left, pos - left));
 		case "#".code:
 			left = pos;
 			pos = ident_pos(is_alpha_um, is_anum);
-			if (pos == left) Error.exitWith(InvalidChar, str.charAt(pos), pos, ERR_POS);
+			if (pos == left) return Error.exit(InvalidChar, pos, 1);
 			cur.id = str.substr(left, pos - left);
 		case "[".code:
-			pos = on_attr(str, pos, max, cur);
-			if (pos == ERR_POS) return ERR_POS;
+			err = on_attr(str, pos, max, cur);
+			if (err.type != None) return err;
+			pos = err.pos;
 		case ":".code:
-			pos = on_pseudo(str, pos, max, cur);
-			if (pos == ERR_POS) return ERR_POS;
+			err = on_pseudo(str, pos, max, cur);
+			if (err.type != None) return err;
+			pos = err.pos;
 		default:
 			if (is_alpha_u(c)) {
 				left = pos - 1;
@@ -447,10 +456,10 @@ class Selector {
 				cur.name = str.substr(left, pos - left).toUpperCase();
 			#end
 			} else {
-				Error.exitWith(InvalidChar,str.charAt(pos - 1), pos - 1, ERR_POS);
+				return Error.exit(InvalidChar, pos - 1, 1);
 			}
 		}
-		return pos;
+		return Error.non(pos);
 	}
 
 	public static inline function is_attr_first(c: Int) {
