@@ -80,6 +80,7 @@ class Main {
 
 ### Changes
 
+* `0.3.3`: clearup
 * `0.3.2`:
   - make xml.attributeMap to Array
   - remove escape and StringBuf from Xml.parse

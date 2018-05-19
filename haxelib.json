@@ -5,6 +5,6 @@
   "tags": ["css", "xml", "selector", "parser", "cross", "utility"],
   "description": "CSS-Selector With a Modified Xml Parser(with the position info)",
   "releasenote": "See https://github.com/R32/css-selector/",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "contributors": ["r32"]
 }
