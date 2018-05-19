@@ -148,7 +148,8 @@ class Parser
 			parent.addChild(xml);
 			nsubs++;
 		}
-		while (!StringTools.isEof(c))
+		var max = str.length;
+		while (p < max)
 		{
 			switch(state)
 			{
@@ -168,8 +169,7 @@ class Parser
 					switch(c)
 					{
 						case '<'.code:
-							state = S.IGNORE_SPACES;
-							next = S.BEGIN_NODE;
+							state = S.BEGIN_NODE;
 						default:
 							start = p;
 							state = S.PCDATA;
@@ -177,13 +177,11 @@ class Parser
 							continue;
 					}
 				case S.PCDATA:
-					if (c == '<'.code)
-					{
+					if (c == '<'.code) {
 						if (all_spaces == false) {  // ignore the empty TextNode
 							addChild(Xml.createPCData(str.substr(start, p - start), start));
 						}
-						state = S.IGNORE_SPACES;
-						next = S.BEGIN_NODE;
+						state = S.BEGIN_NODE;
 					} else if (all_spaces && !csss.CValid.is_space(c)){
 						all_spaces = false;
 					}
