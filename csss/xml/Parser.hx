@@ -108,7 +108,11 @@ class Parser
 {
 	static function is_empty_elem(name: String): Bool {
 		// AREA, BASE, BR, COL, EMBED, HR, IMG, INPUT, KEYGEN, LINK, META, PARAM, SOURCE, TRACK, WBR,
-		if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT" || name == "IMG")
+		#if NO_UPPER
+			if (name == "meta" || name == "link" || name == "br" || name == "hr" || name == "input" || name == "img")
+		#else
+			if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT" || name == "IMG")
+		#end
 			return true
 		else
 			return false;
