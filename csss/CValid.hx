@@ -8,26 +8,26 @@ class CValid {
 
 	public static function ignore_space(str: String, i: Int, max: Int): Int {
 		while (i < max) {
-			if (!is_space(str.fastCodeAt(i))) break;
+			if (!is_space(str.fastCodeAt(i))) return i;
 			++ i;
 		}
-		return i;
+		return max;
 	}
 
 	public static function until(str: String, i: Int, max: Int, callb: Int -> Bool): Int {
 		while (i < max) {
-			if (!callb(str.fastCodeAt(i))) break;
+			if (!callb(str.fastCodeAt(i))) return i;
 			++ i;
 		}
-		return i;
+		return max;
 	}
 
 	public static function ident(str: String, i: Int, max: Int, first: Int->Bool, rest: Int->Bool): Int {
-		if (!first(str.fastCodeAt(i))) return i;
+		if (!first(str.fastCodeAt(i))) return i; // TODO: the i may greater than max.
 		while (++i < max) {
-			if (!rest(str.fastCodeAt(i))) break;
+			if (!rest(str.fastCodeAt(i))) return i;
 		}
-		return i;
+		return max;
 	}
 
 	public static inline function is_alpha(c: Int) {
