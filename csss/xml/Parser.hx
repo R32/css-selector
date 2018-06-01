@@ -229,8 +229,7 @@ class Parser
 							if( parent == null )
 								throw new XmlParserException("Expected node name", str, p);
 							start = p + 1;
-							state = S.IGNORE_SPACES;
-							next = S.CLOSE;
+							state = S.CLOSE;
 						default:
 							state = S.TAG_NAME;
 							start = p;
