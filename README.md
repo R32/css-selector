@@ -1,13 +1,13 @@
 CSS Selector
 --------
 
-CSS-Selector With a Modified Xml Parser
+CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not contain TextNodes with only whitespace characters.
 
 * Provide extra position info that can be used to locate invalid value/attr(optional)
 
   > If the position is not accurate(in flashdevelop). You may need add `-D old-error-format`
 
-* Not based on RegExp, No Dependencies
+* No Dependencies
 
 * Ease To Use.
 

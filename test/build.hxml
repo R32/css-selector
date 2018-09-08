@@ -1,5 +1,6 @@
+-cp ../
 -dce full
--main test.Main
+-main CsssTest
 -D analyzer-optimize
 -D old-error-format
 -debug

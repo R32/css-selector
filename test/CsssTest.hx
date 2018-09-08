@@ -1,4 +1,4 @@
-package test;
+package;
 
 import csss.xml.Parser;
 import csss.xml.Xml;
@@ -59,7 +59,6 @@ class CsssTest {
 
 	static function main() {
 		t1();
-		//t2();
 		t3();
 		t4();
 	}
@@ -74,6 +73,8 @@ class CsssTest {
 			":nth-child(+0n+003)",
 			":nth-child( -0n+2 )",
 			":nth-child( -n-2 )",
+			"b~b+b:last-child>b",
+			"b+b+b>b",
 			//":nth-last-child(0n - 40)",
 			//":nth-last-child(+210n + 50)",
 			//":nth-last-child(n)",
@@ -144,25 +145,5 @@ class CsssTest {
 
 	static function eq(b, ?pos: haxe.PosInfos) {
 		if (!b) throw "Error Line: " + pos.lineNumber;
-	}
-
-	macro static function t2() {
-		var myxml = "bin/index.html";
-		var file = sys.io.File.getContent(myxml);
-
-		var html = Parser.parse(file, false).firstElement();
-
-		var body = html.elementsNamed("body").next();
-		var bclass = body.get("class");
-		if (bclass != "xxx") {
-			var p = body.attrPos("class");
-			var pos = haxe.macro.PositionTools.make({
-				min: p,
-				max: p + bclass.length,
-				file: myxml}
-			);
-			haxe.macro.Context.error("click this message to location where the error occurred.", pos);
-		}
-		return macro null;
 	}
 }
