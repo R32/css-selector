@@ -189,7 +189,7 @@ class Selector {
 				cur = new Selector(None);
 				list.push(cur);
 				pos = ignore_space(str, pos, max);
-			case " ".code:
+			case " ".code, "\t".code:
 				ctype = Space;
 				pos = ignore_space(str, pos, max);
 				if (pos < max) {

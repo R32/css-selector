@@ -46,7 +46,7 @@ class Query {
 			case Eq:
 				ret = a.value != null && val == a.value;  // without trim
 			case Wave:    // ~
-				ret = a.value != "" && tval.split("-").indexOf(a.value) != -1;
+				ret = a.value != "" && tval.split(" ").indexOf(a.value) != -1;
 			case Xor:     // ^
 				ret = a.value != "" && tval.indexOf(a.value) == 0;
 			case Dollar:  // $
