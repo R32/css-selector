@@ -5,7 +5,7 @@ import csss.Selector;
 
 @:enum private abstract State(Int) to Int {
 	var None   = 0;
-	var BreakCurrent = 1;  // No need to find current selector in xml but can find in xml.children.
+//	var BreakCurrent = 1;  // No need to find current selector in xml but can find in xml.children.
 	var NoNeed = 2;        // No need to find current selector in xml and xml.children
 	var Invalid = 3;       // No need to find **current and next selector** in xml and xml.children.
 }
@@ -54,7 +54,7 @@ class Query {
 			case All:     // *
 				ret = a.value != "" && tval.indexOf(a.value) != -1;
 			case Or:      // |
-				ret = a.value != "" && tval.split("-").indexOf(a.value) == 0;
+				ret = a.value != "" && (tval == a.value || (StringTools.startsWith(tval, a.value) && tval.charCodeAt(a.value.length) == "-".code) );
 			}
 		case PSU(pe):
 			switch (pe) {
@@ -100,7 +100,6 @@ class Query {
 			state = NoNeed;
 			ret = xml.parent != null && xml.parent.nodeType == Document;
 		case FirstChild:
-			state = BreakCurrent;
 			ret = ei == 0;
 		case LastChild:
 			var sibs = xml.parent.children;
