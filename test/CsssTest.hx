@@ -81,20 +81,20 @@ class CsssTest {
 		];
 		for (sel in a) {
 			var list = Selector.parse(sel);
-			var s = [for (c in list) c.toString()].join(", ");
+			var s = [for (c in list) csss.SelectorTools.toString(c)].join(", ");
 			trace(s);
 		}
 
-		@:privateAccess { // Query.classVali
+		@:privateAccess { // Query.classEq
 			if (!(
-				   csss.Query.classVali("abc hi", "hi")
-				&& csss.Query.classVali("hi", "hi")
-				&& csss.Query.classVali(" hi ", "hi")
-				&& !csss.Query.classVali("hid", "hi")
-				&& !csss.Query.classVali(".hi", "hi")
-				&& !csss.Query.classVali("", "")
-				&& !csss.Query.classVali("hi", null)
-			)) trace("Query.classVali Error...");
+				   csss.Query.classEq("abc hi", "hi")
+				&& csss.Query.classEq("hi", "hi")
+				&& csss.Query.classEq(" hi ", "hi")
+				&& !csss.Query.classEq("hid", "hi")
+				&& !csss.Query.classEq(".hi", "hi")
+				&& !csss.Query.classEq("", "")
+				&& !csss.Query.classEq("hi", null)
+			)) trace("Query.classEq Error...");
 		}
 	}
 

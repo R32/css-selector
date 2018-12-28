@@ -17,57 +17,59 @@ class Query {
 
 	function new() { state = None; }
 
-	function applyFilters(xml: Xml, fs: Array<Filter>, ei: Int): Bool {
-		for (f in fs) {
-			if (eq(xml, f, ei) == false) return false;
-		}
+	function _apply(xml: Xml, a: Array<QItem>, ei: Int): Bool {
+		for (i in a)
+			if (!_eval(xml, i, ei)) return false;
 		return true;
 	}
 
-	function eq(xml: Xml, filter: Filter, ei): Bool {
+	function _eval(xml: Xml, qitem: QItem, ei): Bool {
 		var ret = false;
 		var val: String;
 		inline function strEq(s1: String, s2: String) return s1 != null && s1 != "" && s1 == s2;
-		switch (filter) {
-		case Name(n):
-			ret = n == "*" || strEq(n, xml.nodeName);
-		case Id(id):
-			ret = strEq(id, xml.get("id"));
+		switch (qitem) {
+		case QNode(n):
+		#if NO_UPPER
+			ret = n == "*" || n == xml.nodeName;
+		#else
+			ret = n == "*" || n.toUpperCase() == xml.nodeName;
+		#end
+		case QId(id):
+			ret = strEq(xml.get("id"), id);
 			if (ret) state = NoNeed;
-		case Cls(c):
-			ret = classVali(val = xml.get("class"), c);
-		case Attr(a):
+		case QClass(c):
+			ret = classEq(val = xml.get("class"), c);
+		case QAttr(a):
 			val = xml.get(a.name);
 			if (val == null) return false;
 			var tval = StringTools.trim(val);
 			switch (a.type) {
-			case None:
+			case ANone:
 				ret = true;
-			case Eq:
+			case AEq:
 				ret = a.value != null && val == a.value;  // without trim
-			case Wave:    // ~
+			case AWave:    // ~
 				ret = a.value != "" && tval.split(" ").indexOf(a.value) != -1;
-			case Xor:     // ^
+			case AXor:     // ^
 				ret = a.value != "" && tval.indexOf(a.value) == 0;
-			case Dollar:  // $
+			case ADollar:  // $
 				ret = a.value != "" && tval.lastIndexOf(a.value) == tval.length - a.value.length;
-			case All:     // *
+			case AMul:     // *
 				ret = a.value != "" && tval.indexOf(a.value) != -1;
-			case Or:      // |
+			case AOr:      // |
 				ret = a.value != "" && (tval == a.value || (StringTools.startsWith(tval, a.value) && tval.charCodeAt(a.value.length) == "-".code) );
 			}
-		case PSU(pe):
+		case QPseudo(pe):
 			switch (pe) {
-			case Classes(t):
-				ret = eq_psuedo(xml, t, ei);
-			case Lang(s):
+			case PSelector(s), PSelectorDb(s):
+				ret = pselectorEq(xml, s, ei);
+			case PLang(s):
 				ret = strEq(xml.get("lang"), s);
-			case Not(sel):
-				if (sel.fs == null) sel.calcFilters();
-				ret = sel.fs.length == 1 && eq(xml, sel.fs[0], ei) == false;
-			case Nth(type, n, m):
+			case PNot(i):
+				ret = _eval(xml, i, ei) == false;
+			case PNth(type, n, m):
 				switch (type) {
-				case NthChild:      ret = eq_nth(xml, ei, n, m);
+				case NthChild:      ret = nthEq(xml, ei, n, m);
 				case NthLastChild,  // TODO Not Implemented
 					 NthOfType,
 					 NthLastOfType: ret = false;
@@ -77,7 +79,7 @@ class Query {
 		return ret;
 	}
 
-	function eq_nth(xml: Xml, ei, n, m): Bool {
+	function nthEq(xml: Xml, ei, n, m): Bool {
 		++ ei;  // start at 1.
 		if (n < 0) {
 			if (m < 0) {
@@ -93,15 +95,15 @@ class Query {
 		}
 	}
 
-	function eq_psuedo(xml: Xml, t: PClsType, ei): Bool {
+	function pselectorEq(xml: Xml, s: String, ei): Bool {
 		var ret = false;
-		switch (t) {
-		case Root:
+		switch (s) {
+		case "root":
 			state = NoNeed;
 			ret = xml.parent != null && xml.parent.nodeType == Document;
-		case FirstChild:
+		case "first-child":
 			ret = ei == 0;
-		case LastChild:
+		case "last-child":
 			var sibs = xml.parent.children;
 			var last = sibs.length;
 			while (--last >= ei) {
@@ -111,11 +113,7 @@ class Query {
 					break;
 				}
 			}
-		case OnlyChild:   //ei == 0 && elen == 1;
-		case FirstOfType: //ni == 0;
-		case LastOfType:
-		case OnlyOfType:
-		case Empty:
+		case "empty":
 			ret = true;
 			for (child in xml.children) {
 				if (child.nodeType != Comment) {
@@ -123,21 +121,17 @@ class Query {
 					break;
 				}
 			}
-		case Checked:
+		case "checked":
 			ret = xml.exists("checked");
-		case Disabled:
+		case "disabled":
 			ret = xml.exists("disabled");
+		case _:
+			// throw "Unsupported: " + s;
 		}
 		return ret;
 	}
 
-	function search(siblling: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Xml {
-		var fs = sel.calcFilters();
-		if (fs.length == 0) {
-			state = Invalid;
-			return null;
-		}
-
+	function search(siblling: Array<Xml>, i: Int, max: Int, j: Int, chain: QList, rec: Bool): Xml {
 		var xml: Xml;
 		var ret = null;
 		var succeed: Bool;
@@ -146,22 +140,22 @@ class Query {
 
 		var prev: State;
 		inline function saveState() { prev = state; state = None; }
-		inline function resState() { state = prev; }
+		inline function resState()  { state = prev; }
 
-		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
-		inline function not_sub_selector() { return ctype == None; }
-		inline function has_sub_selector() { return ctype != None; }
+		var sopt: Operator = chain.sub == null ? None : chain.sub.opt;
+		inline function not_sub_selector() { return sopt == None; }
+		inline function has_sub_selector() { return sopt != None; }
 
 		while (i < max) {
 			xml = siblling[i];
 			if (xml.nodeType == Element) {
-				succeed = applyFilters(xml, fs, j);
+				succeed = _apply(xml, chain.h, j);
 
 				if (succeed && not_sub_selector())
 					return xml;
 				else if (sib || adj) {
 					saveState();
-					ret = search(siblling, i, i + 1, j, sel.sub, false); // TODO: i + 1
+					ret = search(siblling, i, i + 1, j, chain.sub, false); // TODO: i + 1
 					if (ret != null) return ret;
 					if (state == Invalid) break;
 					resState();
@@ -169,14 +163,14 @@ class Query {
 
 				adj = false;
 				if (succeed && has_sub_selector()) {
-					if (ctype == Space || ctype == Child) {
+					if (sopt == Space || sopt == Child) {
 						saveState();
-						// ctype == Space ? (E   F)  :  (E > F)
-						ret = search(xml.children, 0, xml.children.length, 0, sel.sub, ctype == Space);
+						// sopt == Space ? (E   F)  :  (E > F)
+						ret = search(xml.children, 0, xml.children.length, 0, chain.sub, sopt == Space);
 						if (ret != null) return ret;
 						if (state == Invalid) break;
 						resState();
-					} else if (ctype == Adjoin) {
+					} else if (sopt == Adjoin) {
 						adj = true;  // (E + F)
 					} else if (!sib) {
 						sib = true;  // (E ~ F)
@@ -185,7 +179,7 @@ class Query {
 
 				if (rec && (state: Int) < (NoNeed: Int)) { // recursive
 					saveState();
-					ret = search(xml.children, 0, xml.children.length, 0, sel, true);
+					ret = search(xml.children, 0, xml.children.length, 0, chain, true);
 					if (ret != null) return ret;
 					if (state == Invalid) break;
 					resState();
@@ -198,13 +192,7 @@ class Query {
 		return ret;
 	}
 
-	function searchAll(out: Array<Xml>, siblling: Array<Xml>, i: Int, max: Int, j: Int, sel: Selector, rec: Bool): Void {
-		var fs = sel.calcFilters();
-		if (fs.length == 0) {
-			state = Invalid;
-			return;
-		}
-
+	function searchAll(out: Array<Xml>, siblling: Array<Xml>, i: Int, max: Int, j: Int, chain: QList, rec: Bool): Void {
 		var xml: Xml;
 		var succeed: Bool;
 		var sib: Bool = false; // Sibling
@@ -214,33 +202,33 @@ class Query {
 		inline function saveState() { prev = state; state = None; }
 		inline function resState() { state = prev; }
 
-		var ctype: ChildType = sel.sub == null ? None : sel.sub.ctype;
-		inline function not_sub_selector() { return ctype == None; }
-		inline function has_sub_selector() { return ctype != None; }
+		var sopt: Operator = chain.sub == null ? None : chain.sub.opt;
+		inline function not_sub_selector() { return sopt == None; }
+		inline function has_sub_selector() { return sopt != None; }
 
 		while (i < max) {
 			xml = siblling[i];
 			if (xml.nodeType == Element) {
-				succeed = applyFilters(xml, fs, j);
+				succeed = _apply(xml, chain.h, j);
 
 				if (succeed && not_sub_selector()) {
 					out.push(xml);
 				} else if (sib || adj) {
 					saveState();
-					searchAll(out, siblling, i, i + 1, j, sel.sub, false); // TODO: looking for anather way instead of i + 1
+					searchAll(out, siblling, i, i + 1, j, chain.sub, false); // TODO: looking for anather way instead of i + 1
 					if (state == Invalid) break;
 					resState();
 				}
 
 				adj = false;
 				if (succeed && has_sub_selector()) {
-					if (ctype == Space || ctype == Child) {
+					if (sopt == Space || sopt == Child) {
 						saveState();
-						// ctype == Space ? (E   F)  :  (E > F)
-						searchAll(out, xml.children, 0, xml.children.length, 0, sel.sub, ctype == Space);
+						// sopt == Space ? (E   F)  :  (E > F)
+						searchAll(out, xml.children, 0, xml.children.length, 0, chain.sub, sopt == Space);
 						if (state == Invalid) break;
 						resState();
-					} else if (ctype == Adjoin) {
+					} else if (sopt == Adjoin) {
 						adj = true;  // (E + F)
 					} else if (!sib) {
 						sib = true;  // (E ~ F)
@@ -249,7 +237,7 @@ class Query {
 
 				if (rec && (state: Int) < (NoNeed: Int)) {
 					saveState();
-					searchAll(out, xml.children, 0, xml.children.length, 0, sel, true);
+					searchAll(out, xml.children, 0, xml.children.length, 0, chain, true);
 					if (state == Invalid) break;
 					resState();
 				}
@@ -260,7 +248,7 @@ class Query {
 		}
 	}
 
-	static function classVali(s: String, v: String): Bool {
+	static function classEq(s: String, v: String): Bool {
 		if (s == null || s == "") return false;
 		var c: Int;
 		var pos = 0;
@@ -294,14 +282,14 @@ class Query {
 		var ret = null;
 		if (top.nodeType != Document && top.nodeType != Element) return ret;
 		var q = new Query();
-		var sa = Selector.parse(s);
+		var sa = QList.parse(s);
 		if (sa.length == 0) return null;
 		if (sa.length == 1) {
 			return q.search(top.children, 0, top.children.length, 0, sa[0], true);
 		} else {
 			var r = [];
-			for (sel in sa) {
-				var x = q.search(top.children, 0, top.children.length, 0, sel, true);
+			for (chain in sa) {
+				var x = q.search(top.children, 0, top.children.length, 0, chain, true);
 				if (x != null)
 					r.push(x);
 			}
@@ -327,14 +315,14 @@ class Query {
 		var ret = [];
 		if (top.nodeType != Document && top.nodeType != Element) return ret;
 
-		var sa = Selector.parse(s);
+		var sa = QList.parse(s);
 		if (sa.length == 0) return ret;
 		var q = new Query();
 		if (sa.length == 1) {
 			q.searchAll(ret, top.children, 0, top.children.length, 0, sa[0], true);
 		} else {
-			for (sel in sa) {
-				q.searchAll(ret, top.children, 0, top.children.length, 0, sel, true);
+			for (chain in sa) {
+				q.searchAll(ret, top.children, 0, top.children.length, 0, chain, true);
 			}
 			var p = [];
 			for (x in ret) {
