@@ -76,12 +76,6 @@ class QList {
 		return q;
 	}
 
-	static public function one(opt: Operator, i:QItem):QList {
-		var q = new QList(opt);
-		q.add(i);
-		return q;
-	}
-
 	static public inline function parse(s: String): Array<QList> {
 	#if (lex && !macro)
 		return csss.LRParser.parse(s);

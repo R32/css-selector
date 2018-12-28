@@ -1,9 +1,9 @@
 CSS Selector
 --------
 
-CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not contain TextNodes with only whitespace characters.
+CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not contain empty TextNodes.
 
-* Provide extra position info that can be used to locate invalid value/attr(optional)
+* Provide extra position info that can be used to locate the value/attr
 
   > If the position is not accurate(in flashdevelop). You may need add `-D old-error-format`
 
@@ -22,8 +22,6 @@ CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not 
   E + F : supported  Note: Partial
   E ~ F : supported  Note: Partial
   ```
-
-  supported pseudo-classes/element in [Selector.hx](csss/Selector.hx?ts=4#L459-L476)
 
 * `-D NO_UPPER`: Keep tagName case
 
@@ -80,7 +78,7 @@ class Main {
 
 ### Changes
 
-* `0.3.3`: clearup
+* `0.4.0`: clean
 * `0.3.2`:
   - make xml.attributeMap to Array
   - remove escape and StringBuf from Xml.parse

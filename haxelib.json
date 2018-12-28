@@ -2,9 +2,9 @@
   "name": "csss",
   "url": "https://github.com/R32/css-selector/",
   "license": "MIT",
-  "tags": ["css", "xml", "selector", "parser", "cross", "utility"],
+  "tags": ["css", "xml", "selector", "cross", "utility"],
   "description": "CSS-Selector With a Modified Xml Parser(with the position info)",
-  "releasenote": "See https://github.com/R32/css-selector/",
-  "version": "0.3.3",
+  "releasenote": "clean",
+  "version": "0.4.0",
   "contributors": ["r32"]
 }

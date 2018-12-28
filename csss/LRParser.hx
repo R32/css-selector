@@ -167,6 +167,12 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 		}
 	}
 
+	static function singleQList(opt: Operator, i:QItem):QList {
+		var q = new QList(opt);
+		q.add(i);
+		return q;
+	}
+
 	static function getNM(s, t, str: String, single:Bool): {n:Int, m:Int} {
 		if (single) {
 			if (str == "even")
@@ -230,7 +236,7 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 			if (_t1.pmax == _t2.pmin) {
 				a[a.length - 1].add(i);
 			} else {
-				a.push( QList.one(Space, i) );
+				a.push( singleQList(Space, i) );
 			}
 			a;
 		case [a = aque, op = [">", "+", "~"], i = item]:
@@ -239,9 +245,9 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 				case OpAdd:  Adjoin;
 				case _:      Sibling;
 			}
-			a.push(QList.one(opt, i)); a;
+			a.push(singleQList(opt, i)); a;
 		case [i = item]:
-			[QList.one(None, i)];
+			[singleQList(None, i)];
 	}
 
 	static var item: QItem = switch(s) {
