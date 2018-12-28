@@ -82,11 +82,9 @@ class QList {
 		return q;
 	}
 
-	static public function parse(s: String): Array<QList> {
-	#if lex
-		var lex = new csss.Lexer( lms.ByteData.ofString(s) );
-		var par = new csss.Parser( lex );
-		return par.begin();
+	static public inline function parse(s: String): Array<QList> {
+	#if (lex && !macro)
+		return csss.LRParser.parse(s);
 	#else
 		return csss.Parser.parse(s);
 	#end
