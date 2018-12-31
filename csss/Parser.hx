@@ -26,17 +26,11 @@ class Parser {
 
 	static function doParse(str: String, pos: Int, max: Int, cur: QList, list: Array<QList>): Error {
 		inline function char(p) return str.fastCodeAt(p);
-
 		var left: Int;
 		var c: Int;
 		var opt: Operator = None;
 		var err:Error = Empty;
 		pos = ignore_space(str, pos, max);
-
-		if (char(pos) == "*".code) {
-			cur.add( QNode("*") );
-			++ pos;
-		}
 
 		while (pos < max) {
 			c = char(pos++);
@@ -91,6 +85,10 @@ class Parser {
 				cur.sub = new QList(opt);
 				cur = cur.sub;
 				opt = None;
+			case "*".code:
+				if (!cur.empty())
+					return Error.exit(InvalidChar, pos - 1, 1);
+				cur.add( QNode("*") );
 			default:
 				if (is_alpha_u(c)) {
 					left = pos - 1;
@@ -323,6 +321,8 @@ class Parser {
 			err = readPseudo(str, pos, max, cur);
 			if (err.type != None) return err;
 			pos = err.pos;
+		case "*".code:
+			cur.add( QNode("*") );
 		default:
 			if (is_alpha_u(c)) {
 				left = pos - 1;

@@ -251,6 +251,7 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 	}
 
 	static var item: QItem = switch(s) {
+		case ["*"]:                                 QNode("*");
 		case [CIdent(i)]:                           QNode(i);
 		case [TClass(c)]:                           QClass(c);
 		case [TId(i)]:                              QId(i);
