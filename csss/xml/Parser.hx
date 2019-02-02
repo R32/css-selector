@@ -236,9 +236,9 @@ class Parser
 							continue;
 					}
 				case S.TAG_NAME:
-					if (!isValidChar(c))
+					if (!isValidChar(c)) @:privateAccess
 					{
-						if (parent.nodeName == #if NO_UPPER "script" #else "SCRIPT" #end) @:privateAccess {
+						if (parent.nodeName == #if NO_UPPER "script" #else "SCRIPT" #end && parent.children.length > 0) {
 							var last = parent.children[parent.children.length - 1];
 							// remove last textNode and recover the state
 							last.parent = null;
