@@ -92,6 +92,15 @@ class Xml {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
+		var i = 0;
+		while (i < attributeMap.length) {
+			if (attributeMap[i] == att) {
+				attributeMap[i + 1] = value;
+				attributePos[i >> 1] = p;
+				return;
+			}
+			i += 2;
+		}
 		attributeMap.push(att);
 		attributeMap.push(value);
 		attributePos.push(p);
