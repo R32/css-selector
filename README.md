@@ -78,6 +78,7 @@ class Main {
 
 ### Changes
 
+* `0.5.0`: rewritten the Query.search
 * `0.4.0`: clean
 * `0.3.2`:
   - make xml.attributeMap to Array

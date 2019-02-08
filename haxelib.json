@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["css", "xml", "selector", "cross", "utility"],
   "description": "CSS-Selector With a Modified Xml Parser(with the position info)",
-  "releasenote": "clean",
-  "version": "0.4.0",
+  "releasenote": "Rewritten the Query.search",
+  "version": "0.5.0",
   "contributors": ["r32"]
 }
