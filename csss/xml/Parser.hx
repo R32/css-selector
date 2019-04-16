@@ -20,8 +20,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
  // Note: This is a Modified version copy from haxe.xml.Parse.
- // This revision provides pos info that can be used to locate invalid value/attr.
- // And accept a few empty-element with no closing tag.
+ // 1. This revision provides pos info that can be used to locate invalid value/attr.
+ // 2. accept a few empty-element with no closing tag.
+ // 3. does not escape/unescape the html characters
 
 package csss.xml;
 
@@ -108,11 +109,8 @@ class Parser
 {
 	static function is_empty_elem(name: String): Bool {
 		// AREA, BASE, BR, COL, EMBED, HR, IMG, INPUT, KEYGEN, LINK, META, PARAM, SOURCE, TRACK, WBR,
-		#if NO_UPPER
-			if (name == "meta" || name == "link" || name == "br" || name == "hr" || name == "input" || name == "img")
-		#else
-			if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT" || name == "IMG")
-		#end
+		var name = name.toUpperCase();
+		if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT" || name == "IMG")
 			return true
 		else
 			return false;
@@ -238,7 +236,7 @@ class Parser
 				case S.TAG_NAME:
 					if (!isValidChar(c)) @:privateAccess
 					{
-						if (parent.nodeName == #if NO_UPPER "script" #else "SCRIPT" #end && parent.children.length > 0) {
+						if (parent.nodeName == "script" && parent.children.length > 0) {
 							var last = parent.children[parent.children.length - 1];
 							// remove last textNode and recover the state
 							last.parent = null;
@@ -249,11 +247,7 @@ class Parser
 						}
 						if( p == start )
 							throw new XmlParserException("Expected node name", str, p);
-						#if NO_UPPER
 						xml = Xml.createElement(str.substr(start, p - start), start);
-						#else
-						xml = Xml.createElement(str.substr(start, p - start).toUpperCase(), start);
-						#end
 						addChild(xml);
 						state = S.IGNORE_SPACES;
 						next = S.BODY;
@@ -344,11 +338,7 @@ class Parser
 					{
 						if( start == p )
 							throw new XmlParserException("Expected node name", str, p);
-						#if NO_UPPER
 						var v = str.substr(start,p - start);
-						#else
-						var v = str.substr(start,p - start).toUpperCase();
-						#end
 						if (parent == null || parent.nodeType != Element) {
 							throw new XmlParserException('Unexpected </$v>, tag is not open', str, p);
 						}

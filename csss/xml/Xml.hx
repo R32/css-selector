@@ -150,11 +150,7 @@ class Xml {
 
 	public function elementsNamed( name : String ) : Iterator<Xml> {
 		ensureElementType();
-		#if NO_UPPER
 		var ret = [for (child in children) if (child.nodeType == Element && child.nodeName == name) child];
-		#else
-		var ret = [for (child in children) if (child.nodeType == Element && child.nodeName == name.toUpperCase()) child];
-		#end
 		return ret.iterator();
 	}
 

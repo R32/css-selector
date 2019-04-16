@@ -23,8 +23,6 @@ CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not 
   E ~ F : supported  Note: Partial
   ```
 
-* `-D NO_UPPER`: Keep tagName case
-
 example:
 
 ```haxe
@@ -78,14 +76,6 @@ class Main {
 
 ### Changes
 
+
+* `x.x.x`: removed uppercase
 * `0.5.0`: rewritten the Query.search
-* `0.4.0`: clean
-* `0.3.2`:
-  - make xml.attributeMap to Array
-  - remove escape and StringBuf from Xml.parse
-* `0.3.1`:
-  - Added `:last-child` for Querying.
-  - Allow tag `<IMG>` without `/`.
-  - Ignoring all spaces TextNode of Xml
-* `0.3.0`:   fix class validating of Query. [more...](https://github.com/R32/css-selector/compare/176c4c0...472958c)
-* `0.2.2`:   added `Xml.parse` that you no longer need to `import csss.xml.Parse`
