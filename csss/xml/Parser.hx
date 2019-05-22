@@ -1,24 +1,3 @@
-/*
- * Copyright (C)2005-2017 Haxe Foundation
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- */
  // Note: This is a Modified version copy from haxe.xml.Parse.
  // 1. This revision provides pos info that can be used to locate invalid value/attr.
  // 2. accept a few empty-element with no closing tag.
@@ -288,7 +267,17 @@ class Parser
 						case '='.code:
 							state = S.IGNORE_SPACES;
 							next = S.ATTVAL_BEGIN;
+						case ' '.code, '\n'.code, '\t'.code, '\r'.code, '>'.code, '/'.code:
+							xml.set(aname, "", start);
+							state = S.IGNORE_SPACES;
+							next = S.BODY;
+							continue;
 						default:
+							if( isValidChar(c) ) {
+								xml.set(aname, "", start);
+								state = S.BODY;
+								continue;
+							}
 							throw new XmlParserException("Expected =", str, p);
 					}
 				case S.ATTVAL_BEGIN:
