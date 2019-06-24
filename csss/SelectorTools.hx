@@ -33,7 +33,7 @@ class SelectorTools {
 		var name = a.name;
 		var value = a.value;
 		return switch (a.type) {
-		case ANone:   '[$name]';
+		case AExists: '[$name]';
 		case AEq:     '[$name="$value"]';
 		case AWave:   '[$name~="$value"]';
 		case AXor:    '[$name^="$value"]';

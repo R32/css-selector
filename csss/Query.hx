@@ -27,7 +27,7 @@ class Query {
 			if (val == null) return false;
 			var tval = StringTools.trim(val);
 			switch (a.type) {
-			case ANone:
+			case AExists:
 				ret = true;
 			case AEq:
 				ret = a.value != null && val == a.value;  // without trim
@@ -106,7 +106,15 @@ class Query {
 		case "checked", "disabled":
 			ret = xml.exists(s);
 		case _:
-			throw #if js new js.Error("Unsupported: " + s) #else ("Unsupported: " + s) #end;
+		#if js
+			#if haxe4
+			throw new js.lib.Error("Unsupported: " + s);
+			#else
+			throw new js.Error("Unsupported: " + s);
+			#end
+		#else
+			throw ("Unsupported: " + s);
+		#end
 		}
 		return ret;
 	}

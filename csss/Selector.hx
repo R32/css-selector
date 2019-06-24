@@ -24,7 +24,7 @@ enum Pseudo {
 }
 
 enum AttrType {
-	ANone;
+	AExists;
 	AEq;
 	AWave;
 	AXor;
