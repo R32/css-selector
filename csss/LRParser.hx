@@ -2,7 +2,6 @@ package csss;
 
 import csss.Selector;
 
-#if !macro
 enum abstract Token(Int) to Int {
 	var Eof = 0;
 
@@ -27,6 +26,9 @@ enum abstract Token(Int) to Int {
 	var LParen;          // (
 	var RParen;          // )
 
+	var Nth_N;           //    [+-](INT)?[nN]?
+	var Nth_M;           //    [+-] INT
+
 	var OpAssign;        // = https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors
 	var OpAssignBits;    // ~= split by space
 	var OpAssignXor;     // ^= startWith
@@ -36,7 +38,6 @@ enum abstract Token(Int) to Int {
 
 	var TLang;           // :lang("zh-cn")
 	var TNot;            // :not(selector)
-	var Char_N;          // 2n, +2n, n,
 	var TNthChild;       // :nth-child
 	var TNthLastChild;   // :nth-last-child
 	var TNthOfType;      // :nth-last-of-type
@@ -44,18 +45,19 @@ enum abstract Token(Int) to Int {
 }
 
 @:rule(Eof, 127) class Lexer implements lm.Lexer<Token> {
-	static var ident = "-?[a-zA-Z_][-a-zA-Z0-9_]*";
-	static var integer = "[0-9]+";
+	static var ident = "[-a-zA-Z_][-a-zA-Z0-9_]*";
+	static var integer = "[1-9][0-9]*";
 
 	static var tok = [
 		"[ \t\r\n]+" => lex.token(),
-		"[-+]?[nN]"  => Char_N,
+//		"[-+]?[nN]"  => Char_N,
 		"."     => lex.expect(TClass),
 		"#"     => lex.expect(TId),
 		":"     => lex.expect(TSelector),
 		"::"    => lex.expect(TSelectorDb),
 		ident   => CIdent,
 		integer => CInt,
+		"0"     => CInt,
 
 		">"     => OpGt,
 		"+"     => OpAdd,
@@ -84,7 +86,7 @@ enum abstract Token(Int) to Int {
 			lex.pmin = pmin;  // union
 			t;
 		},
-		"'" => {              // escape char are not supported
+		"'" => {              // the escape chars are not supported
 			var pmin = lex.pmin;
 			var t = lex.qstr();
 			if (t == Eof)
@@ -102,25 +104,88 @@ enum abstract Token(Int) to Int {
 		"'"     => CString,
 	];
 
+	// used for :nth-child-xxxx(2n+1)
+	static var nm_token = [
+		"[ \t]+"           => lex.nm_token(),
+		")"                => RParen,
+		"[+-][ \t]+[0-9]+" => Nth_M,
+		"[+-]?[0-9]+"      => CInt,
+		"[+-]?[0-9]*[nN]"  => Nth_N,
+		"[a-zA-Z]+"        => CIdent,  // even, odd
+	];
+
 	public function expect(t: Token) {
-		var prevPmin = this.pmin;
-		var prevPmax = this.pmax;
-		var next = this.token();
-		if (next != CIdent || prevPmax != this.pmin)
-			throw lm.Utils.error("Unexpected: " + this.current + lm.Utils.posString(this.pmin, this.input));
-		if (t == TSelector)	{
-			switch(this.current) {
-			case "lang":                t = TLang;
-			case "not":                 t = TNot;
-			case "nth-child":           t = TNthChild;
-			case "nth-last-child":      t = TNthLastChild;
-			case "nth-of-type":         t = TNthLastOfType;
-			case "nth-last-of-type":    t = TNthOfType;
-			default:
+		var ppmin = this.pmin;
+		var ppmax = this.pmax;
+		var nxt = this.token();
+		var success = false;
+		if (nxt == CIdent && ppmax == this.pmin) {
+			success = true;
+			if (t == TSelector)	{
+				switch(this.current) {
+				case "lang":t = TLang;
+				case "not": t = TNot;
+				case s: switch(s) {
+					case "nth-child":        t = TNthChild;
+					case "nth-last-child":   t = TNthLastChild;
+					case "nth-of-type":      t = TNthLastOfType;
+					case "nth-last-of-type": t = TNthOfType;
+					default:
+					}
+					if (t != TSelector)
+						success = getNM(this.pmax);
+				}
 			}
 		}
-		this.pmin = prevPmin;
+		if (!success) throw lm.Utils.error("Unexpected: " + this.current + strpos(this.pmin));
+		this.pmin = ppmin; // punion
 		return t;
+	}
+
+	public var tmpNM: {n:Int, m:Int};
+
+	function getNM(pmax) {
+		var success = false;
+		if (this.token() == LParen && this.pmin == pmax) {
+			inline function next_token() { return this.nm_token(); }
+			var t = next_token();
+			var s = this.current;
+			if (t == Nth_N) {
+				this.tmpNM = {n: 1, m: 0};
+				var left = 0;
+				var c = s.charCodeAt(left);
+				if (c == "-".code || c == "+".code) {
+					if (c == "-".code) this.tmpNM.n = -1;
+					++ left;
+				}
+				var right = s.length - 1;
+				c = s.charCodeAt(right);
+				if (c == "n".code || c == "N".code) --right;
+				if (right >= left) {
+					this.tmpNM.n *= Std.parseInt( s.substr(left, right - left + 1));
+				}
+				t = next_token();
+				s = this.current;
+				if (t == CInt && (s.charCodeAt(0) == "-".code || s.charCodeAt(0) == "+".code)) {
+					t = Nth_M;
+				}
+				if (t == Nth_M) {
+					this.tmpNM.m = s.charCodeAt(0) == "-".code ? -1 : 1;
+					this.tmpNM.m *= Std.parseInt( s.substr(1, s.length - 1) );
+					t = next_token();
+				}
+			} else if (t == CIdent && (s == "even" || s == "odd")) {
+				this.tmpNM = s == "even" ? {n:2, m: 0} : {n:2, m: 1};
+				t = next_token();
+			} else if (t == CInt) {
+				this.tmpNM = {n: 0, m: Std.parseInt( this.current )};
+				t = next_token();
+			} else {
+				t = LParen; // let it fail
+			}
+			success = t == RParen;
+		}
+		return success;
 	}
 
 	inline function strpos(p:Int):String return lm.Utils.posString(p, this.input);
@@ -143,55 +208,10 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 		return a[0];
 	}
 
-	static function ntype(s, t, tk: Token):NthType {
-		return switch(tk){
-		case TNthChild:      NthChild;
-		case TNthLastChild:  NthLastChild;
-		case TNthOfType:     NthOfType;
-		case TNthLastOfType: NthLastOfType;
-		case _:              throw s.UnExpected(t);
-		}
-	}
-
 	static function singleQList(opt: Operator, i:QItem):QList {
 		var q = new QList(opt);
 		q.add(i);
 		return q;
-	}
-
-	static function getNM(s, t, str: String, single:Bool): {n:Int, m:Int} {
-		if (single) {
-			if (str == "even")
-				return {n: 2, m: 0}; // 2n + 0
-			else if (str == "odd")
-				return {n: 2, m: 1}; // 2n + 1
-		}
-		// HACK 1, since "-n-2, n-2, -n-, n-" will be parsed as CIdent
-		var ret = {n: 1, m: 0};
-		var i = 0;
-		var c = StringTools.fastCodeAt(str, i);
-		if (c == "-".code) {
-			ret.n = -1;
-			c = StringTools.fastCodeAt(str, ++i);
-		}
-		if (c == "n".code || c == "N".code) {
-			c = StringTools.fastCodeAt(str, ++i);
-			if (c == "-".code) {
-				++i;
-				if (single) {
-					if (str.length > i) {
-						var x:Null<Int> = Std.parseInt(str.substr(i, str.length - i));
-						if (x != null) {
-							ret.m = -x;
-							return ret;
-						}
-					}
-				} else if (i == str.length) {
-					return ret;
-				}
-			}
-		}
-		throw s.UnExpected(t);
 	}
 
 	static inline function valid(s, t, fail) if (fail) throw s.UnExpected(t);
@@ -203,7 +223,6 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 	@:rule(TClass, TId, TNth, TSelector
 	)                   static inline function _s4(input, t):String return input.readString(t.pmin + 1, t.pmax - t.pmin - 1);
 	@:rule(TSelectorDb) static inline function _s5(input, t):String return input.readString(t.pmin + 2, t.pmax - t.pmin - 2);
-	@:rule(Char_N)      static inline function _s6(s       ):Int    return StringTools.fastCodeAt(s, 0) == "-".code ? -1 : 1;
 
 	// %start begin
 	static var begin = switch(s) {
@@ -216,7 +235,6 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 		case [a = aque]:                            [ combine(a) ];
 	}
 
-	// NOTE: need to combine
 	static var aque = switch(s) {
 		case [a = aque, i = item]:
 			if (_t1.pmax == _t2.pmin) {
@@ -236,19 +254,31 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 			[singleQList(None, i)];
 	}
 
+	static var attrval: String = switch(s) {
+		case [CIdent(i)]:                           i;
+		case [CString(x)]:                          x;
+	}
+
 	static var item: QItem = switch(s) {
 		case ["*"]:                                 QNode("*");
 		case [CIdent(i)]:                           QNode(i);
 		case [TClass(c)]:                           QClass(c);
 		case [TId(i)]:                              QId(i);
-		case ["[", CIdent(i), "]"]:                 QAttr(new Attr(i, null, ANone));
+		case ["[", CIdent(i), "]"]:                 QAttr(new Attr(i, null, AExists));
 		case [TSelector(p)]:                        QPseudo( PSelector(p) );
 		case [TSelectorDb(p)]:                      QPseudo( PSelectorDb(p) );
-		case [TLang, "(", CIdent(i) ,")"]:          QPseudo( PLang(i) );
+		case [TLang, "(", v = attrval ,")"]:          QPseudo( PLang(v) );
 		case [TNot, "(", i = item ,")"]:            QPseudo( PNot(i) );
-		case [tk = [TNthChild, TNthLastChild, TNthOfType, TNthLastOfType], "(", x = nth_nm , ")"]:
-			QPseudo( PNth(ntype(s, _t1, tk), x.n, x.m));
-		case ["[", CIdent(i), op = ["=", "~=", "^=", "$=", "*=", "|="], v = value, "]"]:
+		case [tk = [TNthChild, TNthLastChild, TNthOfType, TNthLastOfType]]:
+			var v = switch(tk){
+				case TNthChild:      NthChild;
+				case TNthLastChild:  NthLastChild;
+				case TNthOfType:     NthOfType;
+				case _:              NthLastOfType;
+			}
+			var x = (cast @:privateAccess s.lex: Lexer).tmpNM; // HACK 0
+			QPseudo( PNth(v, x.n, x.m ));
+		case ["[", CIdent(i), op = ["=", "~=", "^=", "$=", "*=", "|="], v = attrval, "]"]:
 			var t = switch(op) {
 				case OpAssign:       AEq;
 				case OpAssignBits:   AWave;
@@ -259,32 +289,4 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 			}
 			QAttr(new Attr(i, v, t));
 	}
-	static var value: String = switch(s) {
-		case [CIdent(i)]:                           i;
-		case [CString(x)]:                          x;
-	}
-	// e.g: (2n + 1), (2n), (1)
-	static var nth_nm: {n:Int, m:Int} = switch(s) {
-		case [n = nth_n]:                           {n: n, m: 0};
-		case [CInt(m)]:                             {n: 0, m: m};
-		case [n = nth_n, op = ["+", "-"], CInt(m)]: valid(s, _t3, m < 0); {n: n, m: op == OpAdd ? m : -m};
-		case [CIdent(i)]:                           getNM(s, _t1, i, true);   // HACK 1, "-n-2" , "n-2"
-		case [CIdent(_), CIdent(_)]:                throw s.UnExpected(_t2);  // HACK 1, "-n- x" , "n- x"
-		case [CIdent(i), CInt(m)]:                                            // HACK 1, "-n- 2", "n- 2"
-			var x = getNM(s, _t1, i, false);
-			x.m = -m;
-			x;
-	}
-
-	static var nth_n: Int = switch(s) {
-		case [CInt(n), Char_N(_)]:                  valid(s, _t2, s.str(_t2).length > 1); n;
-		case [Char_N(n)]:                           n;
-		case [op = ["+", "-"], CInt(n), Char_N(_)]:
-			valid(s, _t2, _t1.pmax != _t2.pmin);
-			valid(s, _t3, _t2.pmax != _t3.pmin || s.str(_t3).length > 1);
-			op == OpAdd ? n : -n;
-	}
 }
-#else
-@:dce class Parser{}
-#end
