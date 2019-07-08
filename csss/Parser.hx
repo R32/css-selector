@@ -170,7 +170,7 @@ class Parser {
 			return Error.exit(InvalidChar, pos, 1);
 		var key = str.substr(left, pos - left);
 
-		var type = ANone;
+		var type = AExists;
 		pos = ignore_space(str, pos, max);
 		var c = char(pos++);
 		if (c == "]".code) {
