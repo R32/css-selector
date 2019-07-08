@@ -40,7 +40,8 @@ class Main {
 
         var attr = body.get("class");
         if (attr != "expected") {
-            var p = body.attrPos("class");                                   // got position of attr
+            var p = body.attrPos("class");             // char position
+            var p = csss.CValid.bytePosition(file, p); // convert to utf8 position
             var pos = haxe.macro.PositionTools.make({
                 min: p,
                 max: p + attr.length,
