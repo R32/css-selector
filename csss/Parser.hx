@@ -18,8 +18,7 @@ class Parser {
 			case Expected:         'Expected: ${String.fromCharCode(errno.len)}, pos: ${errno.pos}';
 			case InvalidArgument:  'InvalidArgument: ${s.substr(errno.pos, errno.len)}, pos: ${errno.pos}';
 			}
-			if (errmsg != null)
-				throw #if js new js.Error(errmsg) #else errmsg #end;
+			if (errno.type != None) throw errmsg;
 		}
 		return list;
 	}
