@@ -29,6 +29,8 @@ class CValid {
 	public static inline function bytePosition(str: String, cpos: Int): Int return cpos;
 #end
 
+	public static inline function mbsLength(str: String):Int return bytePosition(str, str.length);
+
 	public static function ignore_space(str: String, i: Int, max: Int): Int {
 		while (i < max) {
 			if (!is_space(str.fastCodeAt(i))) return i;

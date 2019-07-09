@@ -11,13 +11,13 @@ class Main {
 
     macro static function xml_test() {
         var xml = Xml.createDocument();
-        var div = Xml.createElement("DIV", 1);
-        div.set("hello", "world", 11);
-        var input = Xml.createElement("INPUT", 3);
-        input.set("type", "button", 31);
-        input.set("value", "click", 32);
+        var div = Xml.createElement("DIV", 1, 1);
+        div.set("hello", "world", 0, 0, 0, 0);
+        var input = Xml.createElement("INPUT", 6, 6);
+        input.set("type", "button", 0, 0, 0, 0);
+        input.set("value", "click", 0, 0, 0, 0);
         div.addChild(input);
-        div.addChild(Xml.createPCData("abcdefg", 2));
+        div.addChild(Xml.createPCData("abcdefg", 0, 0));
         xml.addChild(div);
         trace(xml.toString() == '<div hello="world"><input type="button" value="click"/>abcdefg</div>');
         div.remove("hello");
@@ -38,13 +38,12 @@ class Main {
             trace(x.toSimpleString());
         }
 
-        var attr = body.get("class");
-        if (attr != "expected") {
-            var p = body.attrPos("class");             // char position
-            var p = csss.CValid.bytePosition(file, p); // convert to utf8 position
+        var value = body.get("class");
+        if (value != "expected") {
+            var p = body.getPos("class", false, true);                       // utf8 byte position
             var pos = haxe.macro.PositionTools.make({
                 min: p,
-                max: p + attr.length,
+                max: p + csss.CValid.mbsLength(value),                       // utf8 bytes length
                 file: myxml
             });
             haxe.macro.Context.error("click this message to location where the error occurred.", pos);
