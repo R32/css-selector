@@ -29,6 +29,7 @@ extern private class S {
 	public static inline var COMMENT		= 15;
 	public static inline var DOCTYPE		= 16;
 	public static inline var CDATA			= 17;
+	public static inline var ATTRIB_VAL_NOQUOTE = 18;
 }
 
 class XmlParserException
@@ -296,17 +297,22 @@ class Parser
 							start = p + 1; (binStart = bpos + 1);
 							attrValQuote = c;
 						default:
-							throw new XmlParserException("Expected \"", str, p, bpos);
+							state = S.ATTRIB_VAL_NOQUOTE;
+							start = p; (binStart = bpos);
+							continue;
 					}
 				case S.ATTRIB_VAL:
-					switch (c) {
-						case '>'.code | '<'.code if( strict ):
-							// HTML allows these in attributes values
-							throw new XmlParserException("Invalid unescaped " + String.fromCharCode(c) + " in attribute value", str, p, bpos);
-						case _ if (c == attrValQuote):
-							xml.set(aname.s, str.substr(start, p - start), aname.cpos, aname.bpos, start, binStart);
-							state = S.IGNORE_SPACES;
-							next = S.BODY;
+					if (c == attrValQuote) {
+						xml.set(aname.s, str.substr(start, p - start), aname.cpos, aname.bpos, start, binStart);
+						state = S.IGNORE_SPACES;
+						next = S.BODY;
+					}
+				case S.ATTRIB_VAL_NOQUOTE: // without quotes
+					if ( csss.CValid.is_space(c) || c == ">".code ) {
+						xml.set(aname.s, str.substr(start, p - start), aname.cpos, aname.bpos, start, binStart);
+						state = S.IGNORE_SPACES;
+						next = S.BODY;
+						if (c == ">".code) continue;
 					}
 				case S.CHILDS:
 					var tmp:BinPosition = {bpos: bpos};
@@ -373,7 +379,7 @@ class Parser
 						state = S.BEGIN;
 					}
 			}
-			bpos += mbsChar( c ); // ?mbsChar( str.fastCodeAt(p) );
+			bpos += inline mbsChar( c ); // ?mbsChar( str.fastCodeAt(p) );
 			c = str.fastCodeAt(++p);
 		}
 		if (state == S.BEGIN)
