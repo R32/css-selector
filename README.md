@@ -3,9 +3,9 @@ CSS Selector
 
 CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not contain empty TextNodes.
 
-* Provide extra position(both charPos and binPos) info that can be used to locate the `attr/value`.
+* Provide extra position info that can be used to locate the `attr/value`.
 
-  > If the position is not accurate(*in flashdevelop*). You may have to add `-D old-error-format`
+  > The position may not accurate if flashdevelop
 
 * Ease To Use.
 
@@ -46,10 +46,10 @@ class Main {
         }
         var value = body.get("class");
         if (value != "expected") {
-            var p = body.getPos("class", false, true);                       // utf8 byte position
+            var p = body.attrPos("class");
             var pos = haxe.macro.PositionTools.make({
                 min: p,
-                max: p + csss.CValid.mbsLength(value),                       // utf8 bytes length
+                max: p + value.length,
                 file: myxml
             });
             haxe.macro.Context.error("click this message to location where the error occurred.", pos);
@@ -74,8 +74,6 @@ class Main {
 
 ### Changes
 
-
 * `x.x.x`:
- - removed uppercase
- - Added binPos for XML
+  - removed uppercase
 * `0.5.0`: rewritten the Query.search

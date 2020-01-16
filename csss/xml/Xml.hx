@@ -31,24 +31,20 @@ class Xml {
 	public var nodeName(default, null): String;
 	public var nodeValue(default, null): String;
 	public var nodePos(default, null): Int;
-	public var nodeBinPos(default, null): Int;
 
 	public var parent(default, null): Xml;
 	var children: Array<Xml>;
 	var attributeMap: TupleArray<String>; // [(attr, value)]
-	var akeyPos: TupleArray<Int>;         // [(cpos, bpos)], the pos of the attribute
-	var avalPos: TupleArray<Int>;         // [(cpos, bpos)], the pos of the value of attribute
-	function new(nodeType, cpos, bpos) {
+	var attributePos: TupleArray<Int>;    // [(attr, value)], the pos of the attribute
+	function new(nodeType, pos) {
 		this.nodeType = nodeType;
 		if (nodeType == Element || nodeType == Document)
 			children = [];
 		if (nodeType == Element) {
 			attributeMap = [];
-			akeyPos = [];
-			avalPos = [];
+			attributePos = [];
 		}
-		nodePos = cpos;
-		nodeBinPos = bpos;
+		nodePos = pos;
 	}
 
 	public function toString() {
@@ -67,26 +63,24 @@ class Xml {
 		return null;
 	}
 
-	// for old
-	public inline function attrPos(name: String):Int return getPos(name, false, false);
+	public inline function attrPos(name: String):Int return getPos(name, false);
 
-	public function getPos(name : String, isKey : Bool, isBin : Bool) : Int {
+	public function getPos(name : String, isKey : Bool) : Int {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
 		var i = 0;
 		while (i < attributeMap.length) {
 			if (attributeMap[i] == name) {
-				var a = isKey ? akeyPos : avalPos;
-				if (isBin) ++i;
-				return a[i];
+				if (!isKey) ++i;
+				return attributePos[i];
 			}
 			i += 2;
 		}
 		return -1;
 	}
 
-	public function set( att : String, value : String, cpos: Int, bpos: Int, vcpos : Int, vbpos) : Void {
+	public function set( att : String, value : String, apos: Int, vpos: Int) : Void {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
@@ -95,20 +89,16 @@ class Xml {
 		while (i < max) {
 			if (attributeMap[i] == att) {
 				attributeMap[i + 1] = value;
-				akeyPos[i] = cpos;
-				akeyPos[i + 1] = bpos;
-				avalPos[i] = vcpos;
-				avalPos[i + 1] = vbpos;
+				attributePos[i] = apos;
+				attributePos[i + 1] = vpos;
 				return;
 			}
 			i += 2;
 		}
 		attributeMap.push(att);
 		attributeMap.push(value);
-		akeyPos.push(cpos);
-		akeyPos.push(bpos);
-		avalPos.push(vcpos);
-		avalPos.push(vbpos);
+		attributePos.push(apos);
+		attributePos.push(vpos);
 	}
 
 	public function remove( att : String ) : Void {
@@ -119,8 +109,7 @@ class Xml {
 		while (i < attributeMap.length) {
 			if (attributeMap[i] == att) {
 				attributeMap.splice(i, 2);
-				akeyPos.splice(i, 2);
-				avalPos.splice(i, 2);
+				attributePos.splice(i, 2);
 			}
 			i += 2;
 		}
@@ -209,47 +198,47 @@ class Xml {
 	}
 
 	// Note: Use UpperCase for name.
-	static public function createElement( name : String, pos : Int, bpos : Int ) : Xml {
-		var xml = new Xml(Element, pos, bpos);
+	static public function createElement( name : String, pos : Int ) : Xml {
+		var xml = new Xml(Element, pos);
 		xml.nodeName = name;
 		return xml;
 	}
 
-	static public function createPCData( data : String, pos : Int, bpos : Int ) : Xml {
-		var xml = new Xml(PCData, pos, bpos);
+	static public function createPCData( data : String, pos : Int ) : Xml {
+		var xml = new Xml(PCData, pos);
 		xml.nodeValue = data;
 		xml.nodeName = "#TEXT";
 		return xml;
 	}
 
-	static public function createCData( data : String, pos : Int, bpos : Int ) : Xml {
-		var xml = new Xml(CData, pos, bpos);
+	static public function createCData( data : String, pos : Int ) : Xml {
+		var xml = new Xml(CData, pos);
 		xml.nodeValue = data;
 		xml.nodeName = "#CDATA";
 		return xml;
 	}
 
-	static public function createComment( data : String, pos : Int, bpos : Int ) : Xml {
-		var xml = new Xml(Comment, pos, bpos);
+	static public function createComment( data : String, pos : Int ) : Xml {
+		var xml = new Xml(Comment, pos);
 		xml.nodeValue = data;
 		xml.nodeName = "#COMMENT";
 		return xml;
 	}
 
-	static public function createDocType( data : String, pos : Int, bpos : Int ) : Xml {
-		var xml = new Xml(DocType, pos, bpos);
+	static public function createDocType( data : String, pos : Int ) : Xml {
+		var xml = new Xml(DocType, pos);
 		xml.nodeValue = data;
 		return xml;
 	}
 
-	static public function createProcessingInstruction( data : String, pos : Int, bpos : Int ) : Xml {
-		var xml = new Xml(ProcessingInstruction, pos, bpos);
+	static public function createProcessingInstruction( data : String, pos : Int ) : Xml {
+		var xml = new Xml(ProcessingInstruction, pos);
 		xml.nodeValue = data;
 		return xml;
 	}
 
 	static public function createDocument() : Xml {
-		return new Xml(Document, 0, 0);
+		return new Xml(Document, 0);
 	}
 
 	static public function parse( str : String ) : Xml {

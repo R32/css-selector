@@ -16,7 +16,7 @@ class Query {
 		inline function strEq(s1: String, s2: String) return s1 != null && s1 != "" && s1 == s2;
 		switch (qitem) {
 		case QNode(n):
-			ret = n == "*" || n.toLowerCase() == xml.nodeName.toLowerCase();
+			ret = n == "*" || n == xml.nodeName || n.toLowerCase() == xml.nodeName.toLowerCase();
 		case QId(id):
 			ret = strEq(xml.get("id"), id);
 			if (ret) stop = true;

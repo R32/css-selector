@@ -6,31 +6,6 @@ class CValid {
 
 	public static inline var ERR_POS = -1;
 
-#if (utf16 || eval)
-	public static function bytePosition(str: String, cpos: Int): Int {
-		var i = 0;
-		var bytes = 0;
-		while (i < cpos) {
-			var c = StringTools.fastCodeAt(str, i);
-			if (c < 0x80) {
-				++ bytes;
-			} else if (c < 0x800) {
-				bytes += 2;
-			} else if (c >= 0xD800 && c <= 0xDFFF) {
-				bytes += 4;
-			} else {
-				bytes += 3;
-			}
-			++ i;
-		}
-		return bytes;
-	}
-#else
-	public static inline function bytePosition(str: String, cpos: Int): Int return cpos;
-#end
-
-	public static inline function mbsLength(str: String):Int return bytePosition(str, str.length);
-
 	public static function ignore_space(str: String, i: Int, max: Int): Int {
 		while (i < max) {
 			if (!is_space(str.fastCodeAt(i))) return i;
