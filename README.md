@@ -5,11 +5,9 @@ CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not 
 
 * Provide extra position info that can be used to locate the `attr/value`.
 
-  > The position may not accurate if flashdevelop
-
 * Ease To Use.
 
-  use `.querySelector/one` or `.querySelectorAll/all` to query XML. e.g. `xml.all("a:not([href='#'])")`.
+  uses `.querySelector/one` or `.querySelectorAll/all` to query XML. e.g. `xml.all("a:not([href='#'])")`.
 
   supported descendant selector:
 

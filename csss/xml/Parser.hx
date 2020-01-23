@@ -87,14 +87,7 @@ class XmlParserException
 
 class Parser
 {
-	static function is_empty_elem(name: String): Bool {
-		// AREA, BASE, BR, COL, EMBED, HR, IMG, INPUT, KEYGEN, LINK, META, PARAM, SOURCE, TRACK, WBR,
-		var name = name.toUpperCase();
-		if (name == "META" || name == "LINK" || name == "BR" || name == "HR" || name == "INPUT" || name == "IMG")
-			return true
-		else
-			return false;
-	}
+	@:persistent static var r_single = ~/^(?:META|LINK|BR|HR|IMG|INPUT|BASE|AREA|COL|EMBED|PARAM|SOURCE|TRACK|WBR|KEYGEN)$/;
 
 	/**
 	 * Parses the String into an XML Document. Set strict parsing to true in order to enable a strict check of XML attributes and entities.
@@ -240,7 +233,7 @@ class Parser
 						case '/'.code:
 							state = S.WAIT_END;
 						case '>'.code:
-							if (is_empty_elem(xml.nodeName)) // empty-element tag
+							if (r_single.match( xml.nodeName.toUpperCase() ))
 								state = S.BEGIN;
 							else
 								state = S.CHILDS;
