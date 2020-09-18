@@ -134,6 +134,22 @@ class Parser {
 				if (err.type != None) return err;
 				pos = err.pos;
 				cur.add( QPseudo(PNot(no.h[0])) );
+			case "contains":
+				c = char(pos); //
+				if (is_alpha_u(c)) {
+					left = pos++;
+					pos = until_pos(is_anum);
+					cur.add( QPseudo(PContains( str.substr(left, pos - left) )) );
+				} else if (c == '"'.code || c == "'".code) {
+					left = pos + 1;
+					err = readString(str, left, max, c == '"'.code);
+					if (err.type != None) return err;
+					pos = err.pos;
+					cur.add( QPseudo(PContains( str.substr(left, pos - left) )) );
+					pos++; // skip quotes
+				} else {
+					return Error.exit(InvalidChar, pos, 1);
+				}
 			default:
 				var type = NthChild;
 				switch(name) {
@@ -155,6 +171,21 @@ class Parser {
 			cur.add( QPseudo(dbColon ? PSelectorDb(name) : PSelector(name)) );
 		}
 		return Error.non(pos);
+	}
+	static function readString( str : String, pos : Int, max : Int, dbquotes : Bool ) : Error {
+		inline function char(p) return str.fastCodeAt(p);
+		var endc = dbquotes ? '"'.code : "'".code;
+		var i = pos;
+		while (i < max) {
+			var c = char(i);
+			if (c == endc) {
+				if (i == pos || (i > pos && char(i-1) != "\\".code)) {
+					return Error.non(i);
+				}
+			}
+			i++;
+		}
+		return Error.exit(Expected, i - 1, endc);
 	}
 	// str[pos-1] == "["
 	static function readAttribute(str: String, pos: Int, max: Int, cur: QList): Error {
@@ -188,20 +219,18 @@ class Parser {
 				if (char(pos++) != "=".code) return Error.exit(Expected, pos - 1, "=".code);
 			}
 			pos = ignore_space(str, pos, max);
-			c = char(pos++);
-			left = pos;  // skip `'`, `"`
-			switch (c) {
-			case '"'.code:
-				pos = until_pos(un_double_quote);
-			case "'".code:
-				pos = until_pos(un_single_quote);
-			default:
-				if (is_alpha_um(c)) {
-					left = pos - 1;
-					pos = until_pos(is_anum);
-				} else {
-					return Error.exit(InvalidChar, pos - 1, 1);
-				}
+			c = char(pos);
+			if (is_alpha_um(c)) {
+				left = pos++;
+				pos = until_pos(is_anum);
+			} else if (c == '"'.code || c == "'".code) {
+				left = pos + 1;
+				var err = readString(str, left, max, c == '"'.code);
+				if (err.type != None)
+					return err;
+				pos = err.pos;
+			} else {
+				return Error.exit(InvalidChar, pos, 1);
 			}
 			cur.add( QAttr(new Attr(key, str.substr(left, pos - left), type)) );  // if pos == left then empty string("")
 			c = char(pos);
@@ -335,8 +364,6 @@ class Parser {
 	}
 
 	static inline function is_attr_first(c: Int) return is_alpha_u(c) || c == ":".code;
-	static inline function un_double_quote(c) { return c != '"'.code; }
-	static inline function un_single_quote(c) { return c != "'".code; }
 }
 
 /**

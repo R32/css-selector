@@ -80,6 +80,7 @@ class SelectorTools {
 		case PLang(s):       ":" + "lang" + "(" + '"' + s + '"' + ")";
 		case PNot(i):        ":" + "not"  + "(" + s_qitem(i) + ")";
 		case PNth(t, n, m):  ":" + s_nthtype(t) + "(" + s_nm(n, m) + ")";
+		case PContains(s):   ":" + "contains" + "(" + '"' + s + '"' + ")";
 		}
 	}
 }

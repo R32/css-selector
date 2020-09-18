@@ -57,6 +57,21 @@ class Query {
 					 NthOfType,
 					 NthLastOfType: ret = false;
 				}
+			case PContains(s):
+				function loop( node : Xml ) {
+					switch(node.nodeType) {
+					case TEXT:
+						return node.nodeValue.indexOf(s) != -1;
+					case Element:
+						for (x in node.children) {
+							if (loop(x))
+								return true;
+						}
+					case _:
+					}
+					return false;
+				}
+				ret = loop(xml);
 			}
 		}
 		return ret;

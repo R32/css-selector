@@ -42,6 +42,7 @@ enum abstract Token(Int) to Int {
 	var TNthLastChild;   // :nth-last-child
 	var TNthOfType;      // :nth-last-of-type
 	var TNthLastOfType;  // :nth-of-type
+	var TContains;       //
 }
 
 @:rule(Eof, 127) class Lexer implements lm.Lexer<Token> {
@@ -125,6 +126,7 @@ enum abstract Token(Int) to Int {
 				switch(this.current) {
 				case "lang":t = TLang;
 				case "not": t = TNot;
+				case "contains": t = TContains;
 				case s: switch(s) {
 					case "nth-child":        t = TNthChild;
 					case "nth-last-child":   t = TNthLastChild;
@@ -267,8 +269,9 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 		case ["[", CIdent(i), "]"]:                 QAttr(new Attr(i, null, AExists));
 		case [TSelector(p)]:                        QPseudo( PSelector(p) );
 		case [TSelectorDb(p)]:                      QPseudo( PSelectorDb(p) );
-		case [TLang, "(", v = attrval ,")"]:          QPseudo( PLang(v) );
+		case [TLang, "(", v = attrval ,")"]:        QPseudo( PLang(v) );
 		case [TNot, "(", i = item ,")"]:            QPseudo( PNot(i) );
+		case [TContains, "(", v = attrval ,")"]:    QPseudo( PContains(v) );
 		case [tk = [TNthChild, TNthLastChild, TNthOfType, TNthLastOfType]]:
 			var v = switch(tk){
 				case TNthChild:      NthChild;

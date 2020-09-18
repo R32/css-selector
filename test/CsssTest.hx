@@ -39,7 +39,7 @@ class CsssTest {
 			var sa = last ? "nth-last-child" : "nth-child";
 			trace('$sa(${ nm.toString() }) => nth-child(${ pnm.toString() })[${pnm.max}]');
 		#if js
-			if (untyped __js__("'textContent' in document.documentElement")) { // simeple IE8 detection
+			if (js.Syntax.code("'textContent' in document.documentElement")) { // simeple IE8 detection
 				var r0 = js.Browser.document.querySelectorAll('div.selector-test p:$sa(${ nm.toString() })');
 				var r1 = js.Browser.document.querySelectorAll('div.selector-test p:nth-child(${ pnm.toString() })');
 				//js.Browser.console.log('$sa(${nm.toString()}): \t', r0);

@@ -21,6 +21,7 @@ enum Pseudo {
 	PLang(s:String);       // lang()
 	PNot(i:QItem);         //
 	PNth(t:NthType, n:Int, m:Int);
+	PContains(s:String);   // :contains
 }
 
 enum AttrType {
