@@ -83,7 +83,7 @@ enum abstract Token(Int) to Int {
 			var pmin = lex.pmin;
 			var t = lex.str();
 			if (t == Eof)
-				throw lm.Utils.error("Unclosed " + "string" + lex.strpos(pmin));
+				throw("Unclosed " + "string" + lex.strpos(pmin));
 			lex.pmin = pmin;  // union
 			t;
 		},
@@ -91,7 +91,7 @@ enum abstract Token(Int) to Int {
 			var pmin = lex.pmin;
 			var t = lex.qstr();
 			if (t == Eof)
-				throw lm.Utils.error("Unclosed " + "string" + lex.strpos(pmin));
+				throw("Unclosed " + "string" + lex.strpos(pmin));
 			lex.pmin = pmin;  // union
 			t;
 		},
@@ -139,7 +139,7 @@ enum abstract Token(Int) to Int {
 				}
 			}
 		}
-		if (!success) throw lm.Utils.error("Unexpected: " + this.current + strpos(this.pmin));
+		if (!success) throw("Unexpected: " + this.current + strpos(this.pmin));
 		this.pmin = ppmin; // punion
 		return t;
 	}
