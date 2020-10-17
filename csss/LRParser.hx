@@ -279,7 +279,7 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 				case TNthOfType:     NthOfType;
 				case _:              NthLastOfType;
 			}
-			var x = (cast @:privateAccess s.lex: Lexer).tmpNM; // HACK 0
+			var x = (cast @:privateAccess stream.lex: Lexer).tmpNM; // HACK 0
 			QPseudo( PNth(v, x.n, x.m ));
 		case ["[", CIdent(i), op = ["=", "~=", "^=", "$=", "*=", "|="], v = attrval, "]"]:
 			var t = switch(op) {
