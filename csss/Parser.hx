@@ -6,8 +6,8 @@ using StringTools;
 
 class Parser {
 
-	public static function parse(s: String): Array<QList> {
-		var list: Array<QList> = [];
+	public static function parse( s : String ) : Array<QList> {
+		var list : Array<QList> = [];
 		if (s != null && s != "") {
 			list.push(new QList(Top));
 			var errno =	doParse(s, 0, s.length, list[0], list);
@@ -23,12 +23,11 @@ class Parser {
 		return list;
 	}
 
-	static function doParse(str: String, pos: Int, max: Int, cur: QList, list: Array<QList>): Error {
+	static function doParse( str : String, pos : Int, max : Int, cur : QList, list : Array<QList> ) : Error {
 		inline function char(p) return str.fastCodeAt(p);
-		var left: Int;
-		var c: Int;
-		var opt: Operator = Top;
-		var err:Error = Empty;
+		var left : Int;
+		var c : Int;
+		var err :Error = Empty;
 		pos = ignore_space(str, pos, max);
 
 		while (pos < max) {
@@ -53,27 +52,26 @@ class Parser {
 				if (err.type != None) return err;
 				pos = err.pos;
 			case ",".code:
-				if (cur.empty()) return Error.exit(InvalidChar, pos - 1, 1);
+				if (cur.empty())
+					return Error.exit(InvalidChar, pos - 1, 1);
 				cur = new QList(Top);
 				list.push(cur);
 				pos = ignore_space(str, pos, max);
 			case " ".code, "\t".code:
-				opt = Space;
 				pos = ignore_space(str, pos, max);
 				if (pos < max) {
 					c = char(pos);
 					if (!(c == ",".code || c == ">".code || c == "+".code || c == "~".code)) {
-						cur.sub = new QList(opt);
+						cur.sub = new QList(Space);
 						cur = cur.sub;
-						opt = Top;
 					}
 				}
 			case ">".code,
 				 "+".code,
 				 "~".code:
-				if (!(opt == Top || opt == Space) || cur.empty())
+				if (cur.empty())
 					return Error.exit(InvalidChar, pos - 1, 1);
-				opt = if (c == ">".code) {
+				var opt = if (c == ">".code) {
 					Child;
 				} else if (c == "+".code) {
 					Adjoin;
@@ -83,7 +81,6 @@ class Parser {
 				pos = ignore_space(str, pos, max);
 				cur.sub = new QList(opt);
 				cur = cur.sub;
-				opt = Top;
 			case "*".code:
 				if (!cur.empty())
 					return Error.exit(InvalidChar, pos - 1, 1);
@@ -102,7 +99,7 @@ class Parser {
 	}
 
 	// str[pos-1] == ":"
-	static function readPseudo(str: String, pos: Int, max: Int, cur: QList): Error {
+	static function readPseudo( str : String, pos : Int, max : Int, cur : QList) : Error {
 		inline function char(p) return str.fastCodeAt(p);
 		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
 		inline function until_pos(callb) return until(str, pos, max, callb);
@@ -117,7 +114,7 @@ class Parser {
 		if (left == pos) return Error.exit(InvalidChar, pos, 1);
 		var name = str.substr(left, pos - left);
 		var c = char(pos);
-		var err: Error = Empty;
+		var err : Error = Empty;
 		if (c == "(".code) {
 			if (dbColon)
 				return Error.exit(InvalidSelector, left - 2, pos - (left - 2));
@@ -188,7 +185,7 @@ class Parser {
 		return Error.exit(Expected, i - 1, endc);
 	}
 	// str[pos-1] == "["
-	static function readAttribute(str: String, pos: Int, max: Int, cur: QList): Error {
+	static function readAttribute( str : String, pos : Int, max : Int, cur : QList) : Error {
 		inline function char(p) return str.fastCodeAt(p);
 		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
 		inline function until_pos(callb) return until(str, pos, max, callb);
@@ -242,7 +239,7 @@ class Parser {
 		return Error.non(pos);
 	}
 
-	static function readNM(str: String, pos: Int, max: Int, cur: QList, type: NthType): Error {
+	static function readNM( str : String, pos : Int, max : Int, cur : QList, type : NthType ) : Error {
 		inline function char(p) return str.fastCodeAt(p);
 		var n = 1, m = 0;
 		if (str.substr(pos, 4).toLowerCase() == "even") {
@@ -254,7 +251,7 @@ class Parser {
 			pos += 3;
 		} else {
 			var gotN = false;
-			var t: Null<Int> = null;
+			var t : Null<Int> = null;
 			var sign = 2;      // 0 == "+", 1 == "-"
 			var c;
 			var ep = pos;
@@ -322,14 +319,14 @@ class Parser {
 	}
 
 	// for ":not( |single-selector| )".
-	static function readPseudoNot(str: String, pos: Int, max: Int, cur: QList): Error {
+	static function readPseudoNot( str : String, pos : Int, max : Int, cur : QList) : Error {
 		inline function char(p) return str.fastCodeAt(p);
 		inline function ident_pos(first, rest) return ident(str, pos, max, first, rest);
 		inline function until_pos(callb) return until(str, pos, max, callb);
 
-		var left: Int;
+		var left : Int;
 		var c = char(pos++);
-		var err: Error = Empty;
+		var err : Error = Empty;
 		switch (c) {
 		case ".".code:
 			left = pos;
@@ -363,7 +360,7 @@ class Parser {
 		return Error.non(pos);
 	}
 
-	static inline function is_attr_first(c: Int) return is_alpha_u(c) || c == ":".code;
+	static inline function is_attr_first( c : Int ) return is_alpha_u(c) || c == ":".code;
 }
 
 /**
@@ -385,20 +382,20 @@ Note: Limit to 7
 @:enum extern abstract Error(Int) {
 	var Empty = 0;
 
-	var pos(get, never): Int; // [ 0-19] 20bit
-	var len(get, never): Int; // [20-27]  8bit
-	var type(get, never): ErrType;
-	private inline function get_pos():Int return this & MAX_POS;
-	private inline function get_len():Int return (this >> BIT) & MAX_LEN;
-	private inline function get_type():ErrType return cast this & ERR_MASK;
+	var pos(get, never) : Int; // [ 0-19] 20bit
+	var len(get, never) : Int; // [20-27]  8bit
+	var type(get, never) : ErrType;
+	private inline function get_pos() : Int return this & MAX_POS;
+	private inline function get_len() : Int return (this >> BIT) & MAX_LEN;
+	private inline function get_type() : ErrType return cast this & ERR_MASK;
 
-	inline function new(type: ErrType, pos: Int, len: Int) this = pos | (len << BIT) | type;
+	inline function new( type : ErrType, pos : Int, len : Int) this = pos | (len << BIT) | type;
 
 	static inline var ERR_MASK = 0x70000000;
 	static inline var MAX_POS = 0xFFFFF;
 	static inline var MAX_LEN = 0xFF;
 	static inline var BIT = 20;
 
-	static inline function exit(t: ErrType, p: Int, l: Int):Error return cast (p | (l << BIT) | t);
-	static inline function non(p: Int):Error return cast p;
+	static inline function exit( t : ErrType, p : Int, l : Int) : Error return cast (p | (l << BIT) | t);
+	static inline function non( p : Int ) : Error return cast p;
 }
