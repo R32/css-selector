@@ -13,7 +13,7 @@ class SelectorTools {
 			var sclasses = s.classes.length == 0 ? "" : "." + s.classes.join(".");
 			var spseudo = s.pseudes.map(p -> s_pseudo(p)).join("");
 			var sep = switch (s.opt) {
-				case None:     "";
+				case Top:      "";
 				case Space:    " ";
 				case Child:    " " + ">" + " ";
 				case Adjoin:   " " + "+" + " ";

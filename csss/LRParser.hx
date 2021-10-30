@@ -253,7 +253,7 @@ class LRParser implements lm.LR0<Lexer, Array<QList>> {
 			}
 			a.push(singleQList(opt, i)); a;
 		case [i = item]:
-			[singleQList(None, i)];
+			[singleQList(Top, i)];
 	}
 
 	static var attrval: String = switch(s) {

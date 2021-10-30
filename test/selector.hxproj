@@ -2,7 +2,7 @@
 <project version="2">
   <!-- Output SWF options -->
   <output>
-    <movie outputType="CustomBuild" />
+    <movie outputType="Application" />
     <movie input="" />
     <movie path="build.hxml" />
     <movie fps="0" />
@@ -24,7 +24,7 @@
     <option noInlineOnDebug="False" />
     <option mainClass="CsssTest" />
     <option enabledebug="False" />
-    <option additional="-dce full&#xA;-debug &#xA;-resource bin/index.html@myxml" />
+    <option additional="-dce full&#xA;-debug&#xA;-resource bin/index.html@myxml" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
@@ -42,7 +42,7 @@
     <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
-  <preBuildCommand>cmd /c haxe $(OutputFile)</preBuildCommand>
+  <preBuildCommand />
   <!-- Executed after build -->
   <postBuildCommand alwaysRun="False" />
   <!-- Other project options -->

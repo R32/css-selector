@@ -1,8 +1,8 @@
 package csss;
 
 enum Operator {
-	None;    //
-	Space;   //
+	Top;     // Means it's the first one in the selectors
+	Space;   // " "
 	Child;   // ">"
 	Adjoin;  // "+"
 	Sibling; // "~"
@@ -78,7 +78,7 @@ class QList {
 	}
 
 	static public inline function parse(s: String): Array<QList> {
-	#if (lex && !macro)
+	#if (lex && !macro && useslex)
 		return csss.LRParser.parse(s);
 	#else
 		return csss.Parser.parse(s);

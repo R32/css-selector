@@ -5,7 +5,7 @@ import csss.xml.Xml;
 import csss.Selector;
 import csss.NM;
 import csss.Path;
-using csss.Query;
+ using csss.Query;
 
 class CsssTest {
 
@@ -22,22 +22,23 @@ class CsssTest {
 	}
 
 	static function t3() {
-		trace("------ t3 ------");
-		function union(a: Array<Int>, b: Array<Int>) {
+		function union(a: Array<Int>, b: Array<Int>, ?result : String ) {
 			var x = NM.union(new NM(a[0], a[1]), new NM(b[0], b[1]));
-			trace('(${a[0]}n+${a[1]}) U (${b[0]}n+${b[1]}) = ' + (x == null ? null : x.toString()));
+			//trace('(${a[0]}n+${a[1]}) U (${b[0]}n+${b[1]}) = ' + (x == null ? null : x.toString()));
+			var s = x == null ? "null" : x.toString();
+			eq(result == s);
 		}
-		union([2, 6], [4, 2]);
-		union([3, 5], [3, 3]);
-		union([2, 3], [3, 2]);
-		union([2, 329], [3, 22]);
-		union([7, 9], [15, 22]);
+		union([2, 6], [4, 2], "4n+6");
+		union([3, 5], [3, 3], "null");
+		union([2, 3], [3, 2], "6n+5");
+		union([2, 329], [3, 22], "6n+331");
+		union([7, 9], [15, 22] , "105n+37");
 
 		function convert(a, max, last, ?pos: haxe.PosInfos) {
 			var nm = new NM(a[0], a[1]);
 			var pnm = max > 0 ? PNM.ofLastNM(nm, max) : PNM.ofNM(nm);
 			var sa = last ? "nth-last-child" : "nth-child";
-			trace('$sa(${ nm.toString() }) => nth-child(${ pnm.toString() })[${pnm.max}]');
+		//	trace('$sa(${ nm.toString() }) => nth-child(${ pnm.toString() })[${pnm.max}]');
 		#if js
 			if (js.Syntax.code("'textContent' in document.documentElement")) { // simeple IE8 detection
 				var r0 = js.Browser.document.querySelectorAll('div.selector-test p:$sa(${ nm.toString() })');
@@ -63,8 +64,7 @@ class CsssTest {
 		t4();
 	}
 	static function t1() {
-		trace("------ t1 ------");
-		var a = [
+		var src = [
 			"a li#uniq.btn.btn-primary[title][name^=hello]:empty",
 			"a span:last-child, a li:not(:first-child) > span[title]",
 			"a.btn:nth-child( -2n + 01 )",
@@ -75,31 +75,39 @@ class CsssTest {
 			":nth-child( -n-2 )",
 			"b~b+b:last-child>b",
 			"b+b+b>b",
-			//":nth-last-child(0n - 40)",
-			//":nth-last-child(+210n + 50)",
-			//":nth-last-child(n)",
+			"b,a li",
 		];
-		for (sel in a) {
-			var list = Selector.parse(sel);
+		var dst = [
+			'a li#uniq.btn.btn-primary[title][name^="hello"]:empty',
+			'a span:last-child, a li:not(:first-child) > span[title]',
+			'a.btn:nth-child(-2n+1)',
+			':nth-child(-n+1)',
+			':nth-child(20)',
+			':nth-child(3)',
+			':nth-child(2)',
+			':nth-child(-n-2)',
+			'b ~ b + b:last-child > b',
+			'b + b + b > b',
+			"b, a li",
+		];
+		for (i in 0...src.length) {
+			var list = Selector.parse(src[i]);
 			var s = [for (c in list) csss.SelectorTools.toString(c)].join(", ");
-			trace(s);
+			//trace(s);
+			eq(s == dst[i]);
 		}
-
-		@:privateAccess { // Query.classEq
-			if (!(
-				   csss.Query.classEq("abc hi", "hi")
-				&& csss.Query.classEq("hi", "hi")
-				&& csss.Query.classEq(" hi ", "hi")
-				&& !csss.Query.classEq("hid", "hi")
-				&& !csss.Query.classEq(".hi", "hi")
-				&& !csss.Query.classEq("", "")
-				&& !csss.Query.classEq("hi", null)
-			)) trace("Query.classEq Error...");
-		}
+		var classEqual = @:privateAccess csss.Query.classEqual;
+		if (!(classEqual("abc hi", "hi")
+		&& classEqual("hi", "hi")
+		&& classEqual(" hi ", "hi")
+		&& !classEqual("hid", "hi")
+		&& !classEqual(".hi", "hi")
+		&& !classEqual("", "")
+		&& !classEqual("hi", null)
+		)) throw "Query.classEq Error...";
 	}
 
 	static function t4() @:privateAccess {
-		trace("------ t4 query ------");
 		var txt = haxe.Resource.getString("myxml");
 		var html = csss.xml.Parser.parse(txt).firstElement();
 		var body = html.elementsNamed("body").next();
@@ -115,7 +123,7 @@ class CsssTest {
 
 		js.Lib.global.qa = function(str: String) {
 			var a = html.querySelectorAll(str);
-			trace(a.map(x->x.toSimpleString()).join(", "));
+			trace("(" + a.length + ") [" + a.map(x->x.toSimpleString()).join(", ") + "]");
 		}
 
 		var doc = html.parent;
@@ -139,8 +147,50 @@ class CsssTest {
 		sub(st3.one(".L2-3-s"), st3);
 		sub(st3.one(".L2-3-s"), null);
 		sub(html.one("#uniq"), st3);
-		//
+
+		// querySelector
+		var selectors = [
+			"div > div div",
+			"div#t4 > div div",
+			"b ~ b",
+			"b + b",
+			"b ~ b ~ b",
+			"b + b + b",
+			"b + b + b + b",
+			"b ~ b ~ b ~ b",
+			"div p a",
+			"#t3 li ol span",
+			"b, a",
+		];
+		for(s in selectors) {
+			var x1 = csss.Query.one(html, s);
+			var x2 = js.Browser.document.querySelector(s);
+			var s1 = x1.toSimpleString();
+			var s2 = DOMToString(x2);
+			eq(s1.toLowerCase() == s2.toLowerCase());
+		}
+		// querySelectorAll
+		var selectors = ["a", "div", "div p", "b + b + b", "b ~ b ~ b"];
+		for(s in selectors) {
+			var a1 = csss.Query.all(html, s);
+			var a2 = js.Browser.document.querySelectorAll(s);
+			eq(a1.length == a2.length);
+			for(i in 0...a1.length) {
+				var s1 = a1[i].toSimpleString();
+				var s2 = DOMToString(cast a2[i]);
+				eq(s1.toLowerCase() == s2.toLowerCase());
+				//trace(s1, s2, s1.toLowerCase() == s2.toLowerCase());
+			}
+		}
 		#end
+	}
+
+	static function DOMToString( node : js.html.Element ) {
+		if (node == null)
+			return "null";
+		var id = node.id == "" ? "" : "#" + node.id;
+		var cls = node.className == "" ? "" : ("." + node.className.split(" ").join("."));
+		return '<${node.tagName}$id$cls>';
 	}
 
 	static function eq(b, ?pos: haxe.PosInfos) {

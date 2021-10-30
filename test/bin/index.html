@@ -14,19 +14,19 @@
 <input id="txt" type="text" />
 <input type="button" value="here" class="p3" />
 <a href="#" title="test" id="uniq" class="btn btn-lite">some word</a>
-<div class="selector-test">
+<div class="selector-test div-1">
 	<p class="p1">p1</p>
 	<p class="p2"></p>
 	<p class="p3">p3</p>
 	<p class="p4">p4</p>
 	<p class="p5">p5</p>
-	<p class="p6" id="abc">p6 <a href="#">p6 link</a></p>
+	<p class="p6" id="abc">p6 <a href="#" class="p6-a">p6 link</a></p>
 	<p class="p7" id="xyz"><a href="#">p7</a></p>
 	<p class="p8"><a href="#" class="x1">p8</a></p>
 	<p class="p9" id=""><a href="#" class="x2">p9</a></p>
 	<p class="p10" id=""><a href="javascript:void(0)" class="x3">p10</a></p>
 </div>
-<div id="siblling-test">
+<div id="siblling-test" class="div-2">
 	<b class="b1">b1</b>
 	<em> | </em>
 	<b class="b2">b2</b>
@@ -39,14 +39,19 @@
 	<b class="b7">b7</b>
 	<b class="b8">b8</b>
 	<b class="b9">b9</b>
+	<div class="div-2 lvl1 ">
+		<div class="div-2 lvl2">
+			<div class="div-2 lvl3"></div>
+		</div>
+	</div>
 </div>
-<div id="t2">
+<div id="t2" class="div-3">
 	<p class="t2c">
 		<span>span</span>
-		<a href="#">link</a>
+		<a href="#" class="t2-t2c-a">>link</a>
 	</p>
 </div>
-<div id="t3">
+<div id="t3" class="div-4">
 	<li class="l1">L1</li>
 	<li class="l2">
 		<ol>
@@ -62,6 +67,13 @@
 	<li class="l5">L5</li>
 	<li class="l6">L6</li>
 	<li class="l7"> L7 & L7 </li>
+</div>
+<div id="t4" class="div-5">
+	<div class="div-5 lvl1">
+		<div class="div-5 lvl2">
+			<div class="div-5 lvl3">lvl3</div>
+		</div>
+	</div>
 </div>
 <script type="text/javascript" src="test.js"></script>
 </body>

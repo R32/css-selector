@@ -1,23 +1,9 @@
 CSS Selector
 --------
 
-CSS-Selector With a Modified Xml Parser. Note: the parsed XML instance will not contain empty TextNodes.
+A css selector tool and a simple xml parser(Provides additional position information).
 
-* Provide extra position info that can be used to locate the `attr/value`.
-
-* Ease To Use.
-
-  uses `.querySelector/one` or `.querySelectorAll/all` to query XML. e.g. `xml.all("a:not([href='#'])")`.
-
-  supported descendant selector:
-
-  ```
-  E :   supported
-  E F : supported
-  E > F : supported
-  E + F : supported  Note: Partial
-  E ~ F : supported  Note: Partial
-  ```
+It's suitable for use in non-browsing environments.
 
 example:
 
@@ -35,10 +21,10 @@ class Main {
         var file = sys.io.File.getContent(myxml);
         var body = Xml.parse(file).querySelector("body");
 
-        var x = body.querySelector("#t3 > li span");                         // equal body.one("#t3 > li span")
+        var x = body.querySelector("#t3 > li span");
         trace(x != null ? x.toSimpleString() : x);
 
-        var a = body.querySelectorAll(".selector-test > :nth-child(2n+1)");  // equal body.all("...")
+        var a = body.querySelectorAll(".selector-test > :nth-child(2n+1)");
         for (x in a) {
             trace(x.toSimpleString());
         }
@@ -63,15 +49,9 @@ class Main {
 
   e.g: `a[title="hi \"name\"."]` will get a unexpected value.
 
-* Do not suport **two** consecutive `+` or `~`.
-
-  Invalid: `"li + li + li"`, `"li ~ li ~ li"`, `"li + li ~ li"`, `"li ~ li + li"`
-
-  Available: `"li + li > li"`, `"li + li li"`, `"li li + li"`, `"li > li > li"`
-
 
 ### Changes
 
 * `x.x.x`:
   - removed uppercase
-* `0.5.0`: rewritten the Query.search
+  - Rewrote csss.Query again

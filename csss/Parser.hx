@@ -9,7 +9,7 @@ class Parser {
 	public static function parse(s: String): Array<QList> {
 		var list: Array<QList> = [];
 		if (s != null && s != "") {
-			list.push(new QList(None));
+			list.push(new QList(Top));
 			var errno =	doParse(s, 0, s.length, list[0], list);
 			var errmsg = switch (errno.type) {
 			case None:             null;
@@ -27,7 +27,7 @@ class Parser {
 		inline function char(p) return str.fastCodeAt(p);
 		var left: Int;
 		var c: Int;
-		var opt: Operator = None;
+		var opt: Operator = Top;
 		var err:Error = Empty;
 		pos = ignore_space(str, pos, max);
 
@@ -54,7 +54,7 @@ class Parser {
 				pos = err.pos;
 			case ",".code:
 				if (cur.empty()) return Error.exit(InvalidChar, pos - 1, 1);
-				cur = new QList(None);
+				cur = new QList(Top);
 				list.push(cur);
 				pos = ignore_space(str, pos, max);
 			case " ".code, "\t".code:
@@ -65,13 +65,13 @@ class Parser {
 					if (!(c == ",".code || c == ">".code || c == "+".code || c == "~".code)) {
 						cur.sub = new QList(opt);
 						cur = cur.sub;
-						opt = None;
+						opt = Top;
 					}
 				}
 			case ">".code,
 				 "+".code,
 				 "~".code:
-				if (!(opt == None || opt == Space) || cur.empty())
+				if (!(opt == Top || opt == Space) || cur.empty())
 					return Error.exit(InvalidChar, pos - 1, 1);
 				opt = if (c == ">".code) {
 					Child;
@@ -83,7 +83,7 @@ class Parser {
 				pos = ignore_space(str, pos, max);
 				cur.sub = new QList(opt);
 				cur = cur.sub;
-				opt = None;
+				opt = Top;
 			case "*".code:
 				if (!cur.empty())
 					return Error.exit(InvalidChar, pos - 1, 1);
@@ -129,7 +129,7 @@ class Parser {
 				if (pos == left) return Error.exit(InvalidChar, pos, 1);
 				cur.add( QPseudo(PLang(str.substr(left, pos - left))) );
 			case "not": // TODO
-				var no = new QList(None);
+				var no = new QList(Top);
 				err = readPseudoNot(str, pos, max, no);
 				if (err.type != None) return err;
 				pos = err.pos;
