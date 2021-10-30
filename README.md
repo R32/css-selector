@@ -52,6 +52,6 @@ class Main {
 
 ### Changes
 
-* `x.x.x`:
+* `0.7.0`:
   - removed uppercase
   - Rewrote csss.Query again
