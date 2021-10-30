@@ -16,27 +16,18 @@ package csss.xml;
 	var DocType = 10;
 }
 
-
-@:forward(length, push, splice)
-abstract TupleArray<T>(Array<T>) from Array<T> {
-	public inline function new() this = [];
-	@:arrayAccess inline function get(i : Int) : T return this[i];
-	@:arrayAccess inline function set(i : Int, v : T) : T return this[i] = v;
-}
-
 // Xml with Position
 class Xml {
 
-	public var nodeType(default, null): XmlType;
-	public var nodeName(default, null): String;
-	public var nodeValue(default, null): String;
-	public var nodePos(default, null): Int;
-
-	public var parent(default, null): Xml;
-	var children: Array<Xml>;
-	var attributeMap: TupleArray<String>; // [(attr, value)]
-	var attributePos: TupleArray<Int>;    // [(attr, value)], the pos of the attribute
-	function new(nodeType, pos) {
+	public var nodeType(default, null) : XmlType;
+	public var nodeName(default, null) : String;
+	public var nodeValue(default, null) : String;
+	public var nodePos(default, null) : Int;
+	public var parent(default, null) : Xml;
+	var children : Array<Xml>;
+	var attributeMap : Array<String>; // [(attr, value)]
+	var attributePos : Array<Int>;    // [(attr, value)], the pos of the attribute
+	function new( nodeType, pos ) {
 		this.nodeType = nodeType;
 		if (nodeType == Element || nodeType == Document)
 			children = [];
@@ -56,21 +47,23 @@ class Xml {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
 		var i = 0;
-		while (i < attributeMap.length) {
+		var max = attributeMap.length;
+		while (i < max) {
 			if (attributeMap[i] == att) return attributeMap[i + 1];
 			i += 2;
 		}
 		return null;
 	}
 
-	public inline function attrPos(name: String):Int return getPos(name, false);
+	public inline function attrPos( name : String ) : Int return getPos(name, false);
 
-	public function getPos(name : String, isKey : Bool) : Int {
+	public function getPos( name : String, isKey : Bool ) : Int {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
 		var i = 0;
-		while (i < attributeMap.length) {
+		var max = attributeMap.length;
+		while (i < max) {
 			if (attributeMap[i] == name) {
 				if (!isKey) ++i;
 				return attributePos[i];
@@ -80,7 +73,7 @@ class Xml {
 		return -1;
 	}
 
-	public function set( att : String, value : String, apos: Int, vpos: Int) : Void {
+	public function set( att : String, value : String, apos: Int, vpos: Int ) : Void {
 		if (nodeType != Element) {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
@@ -106,7 +99,8 @@ class Xml {
 			throw 'Bad node type, expected Element but found $nodeType';
 		}
 		var i = 0;
-		while (i < attributeMap.length) {
+		var max = attributeMap.length;
+		while (i < max) {
 			if (attributeMap[i] == att) {
 				attributeMap.splice(i, 2);
 				attributePos.splice(i, 2);
@@ -125,7 +119,8 @@ class Xml {
 		}
 		var i = 0;
 		var ret = [];
-		while (i < attributeMap.length) {
+		var max = attributeMap.length;
+		while (i < max) {
 			ret.push(attributeMap[i]);
 			i += 2;
 		}
