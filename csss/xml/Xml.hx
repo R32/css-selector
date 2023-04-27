@@ -5,7 +5,7 @@
 package csss.xml;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType
-@:enum abstract XmlType(Int) to Int {
+extern enum abstract XmlType(Int) to Int {
 	var Element = 1;
 	var TEXT   = 3;
 	var PCData = 3;

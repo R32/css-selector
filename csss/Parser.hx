@@ -366,7 +366,7 @@ class Parser {
 /**
 Note: Limit to 7
 */
-@:enum extern abstract ErrType(Int) to Int {
+extern enum abstract ErrType(Int) to Int {
 	var None = 0;
 	var InvalidChar     = 1 << 28;
 	var InvalidSelector = 2 << 28;
@@ -379,7 +379,7 @@ Note: Limit to 7
   [20-27]: len, MAX = 255, Negative values are not allowed
   [28-30]: type, MAX = 7
 */
-@:enum extern abstract Error(Int) {
+extern enum abstract Error(Int) {
 	var Empty = 0;
 
 	var pos(get, never) : Int; // [ 0-19] 20bit
