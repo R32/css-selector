@@ -138,23 +138,20 @@ class Parser
 							continue;
 					}
 				case S.BEGIN:
-					switch(c)
-					{
-						case '<'.code:
-							state = S.BEGIN_NODE;
-						default:
-							start = p;
-							state = S.PCDATA;
-							all_spaces = true;
-							continue;
+					if (c == "<".code && parent.nodeName != "script") {
+						state = S.BEGIN_NODE;
+					} else {
+						start = p;
+						state = S.PCDATA;
+						all_spaces = true;
+						continue;
 					}
 				case S.PCDATA:
-					if (c == '<'.code && str.fastCodeAt(p + 1) != " ".code) {
-						if (all_spaces == false) {  // ignore the empty TextNode
+					if (c == '<'.code && (str.fastCodeAt(p + 1) == "/".code || parent.nodeName != "script")) {
+						if (!all_spaces)
 							addChild(Xml.createPCData(str.substr(start, p - start), start));
-						}
 						state = S.BEGIN_NODE;
-					} else if (all_spaces && !csss.CValid.is_space(c)){
+					} else if (all_spaces && !csss.CValid.is_space(c)) {
 						all_spaces = false;
 					}
 				case S.CDATA:
@@ -210,15 +207,6 @@ class Parser
 				case S.TAG_NAME:
 					if (!isValidChar(c)) @:privateAccess
 					{
-						if (parent.nodeName == "script" && parent.children.length > 0) {
-							var last = parent.children[parent.children.length - 1];
-							// remove last textNode and recover the state
-							last.parent = null;
-							parent.children.pop();
-							start = last.nodePos;
-							state = S.PCDATA;
-							continue;
-						}
 						if( p == start )
 							throw new XmlParserException("Expected node name", str, p);
 						xml = Xml.createElement(str.substr(start, p - start), start);

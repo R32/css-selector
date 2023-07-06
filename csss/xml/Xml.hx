@@ -104,6 +104,7 @@ class Xml {
 			if (attributeMap[i] == att) {
 				attributeMap.splice(i, 2);
 				attributePos.splice(i, 2);
+				break;
 			}
 			i += 2;
 		}
